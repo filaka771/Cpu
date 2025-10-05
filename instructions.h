@@ -2,8 +2,12 @@
 
 #define INSTRUCTION_SIZE 3
 #define ARG_SIZE 2
-#define INSTRUCTIONS_SET_NUMBER 19
-#define INSTRUCTIONS_FLAGS_NUMBER 4
+#define INSTRUCTIONS_SET_NUMBER 20
+#define INSTRUCTIONS_FLAGS_NUMBER 2
+#define IGNORABLE_SYMBOLS_NUMBER 2
+#define PARSE_STOPING_SYMB_NUMBER 2
+
+#define INIT_TEXT_INSTR_ARR_SIZE 1000
 
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
@@ -22,12 +26,12 @@ typedef struct InstructionArray{
 
 
 typedef struct TextInstructionArg{
-    char imm_flag [2];
+    char imm_flag [3];
     int32_t imm;
-}InstructionArg;
+}TextInstructionArg;
 
 typedef struct TextInstructionOp{
-    char operation_name [4];  // Change to char array, not pointer array
+    char operation_name [4];
     uint32_t num_of_args;
 }TextInstructionOp;
 
@@ -39,6 +43,7 @@ typedef struct TextInstruction{
 
 typedef struct TextInstructionArray{
     uint32_t count;
+    uint32_t capacity;
     TextInstruction* text_instruction_list;
 }TextInstructionArray;
 //-------------------------------------------------------
@@ -48,7 +53,9 @@ typedef struct InstructionSet {
     int8_t num_of_args;
 } InstructionSet; 
 
-extern const char* instruction_flag[4];
+extern const char parse_stoping_symbols[PARSE_STOPING_SYMB_NUMBER];
+extern const char ignorable_symbols[IGNORABLE_SYMBOLS_NUMBER];
+extern const char instruction_flag[INSTRUCTIONS_FLAGS_NUMBER];
 extern const InstructionSet instruction_set[INSTRUCTIONS_SET_NUMBER];
 
 #endif // INSTRUCTIONS_H

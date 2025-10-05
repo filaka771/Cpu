@@ -1,12 +1,9 @@
 #include "instructions.h"
 
 
-const char* instruction_flag[] = {
-    "*x",
-    " *",
-    " x",
-    "  " 
-};
+const char instruction_flag [INSTRUCTIONS_FLAGS_NUMBER] = {'*', 'x'};
+const char ignorable_symbols[IGNORABLE_SYMBOLS_NUMBER] = {' ',  '\t'};
+const char parse_stoping_symbols[PARSE_STOPING_SYMB_NUMBER] = {'\n', '\0'};
 
 const InstructionSet instruction_set[] = {  
     {"inp", 1},
@@ -23,6 +20,7 @@ const InstructionSet instruction_set[] = {
     {"blt", 3},
     {"bge", 3},
     {"ble", 3},
+    {"baw", 1},
     {"str", 1},
     {"ldr", 1},
     {"cfn", 1},
