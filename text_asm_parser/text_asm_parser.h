@@ -27,5 +27,10 @@ typedef struct ParserState{
     bool  arg_seted;
 }ParserState;
 
-void parse_text_asm_file(const char* file_name);
+
+void free_label_table(LabelTable* label_table);
+
+void free_text_instruction_list(TextInstructionArray* text_instruction_array);
+
+void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instruction_array, LabelTable* label_table);
 #endif // TEXT_ASM_PARSER_H

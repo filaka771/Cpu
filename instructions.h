@@ -3,7 +3,9 @@
 #define INSTRUCTION_SIZE 3
 #define ARG_SIZE 2
 #define INSTRUCTIONS_SET_NUMBER 20
+#define MAX_INSTRUCTIONS_NUMBER 256
 #define INSTRUCTIONS_FLAGS_NUMBER 2
+#define MAX_FLAG_NUMBER 8
 #define IGNORABLE_SYMBOLS_NUMBER 2
 #define PARSE_STOPING_SYMB_NUMBER 2
 
@@ -32,6 +34,7 @@ typedef struct TextInstructionArg{
 
 typedef struct TextInstructionOp{
     char operation_name [4];
+    short op_code;
     uint32_t num_of_args;
 }TextInstructionOp;
 

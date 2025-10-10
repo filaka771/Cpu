@@ -112,7 +112,7 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
     }
 }
 
-static void free_label_table(LabelTable* label_table){
+void free_label_table(LabelTable* label_table){
     // Deallocation of long strings
     for(uint32_t i = 0; i < label_table->count; i ++){
         if(label_table->label_list[i].label_size > LABEL_SIZE){
@@ -138,6 +138,7 @@ static void set_op_name(TextInstruction* text_instruction, char* op_name, int* s
         for(int i = 0; i < INSTRUCTIONS_SET_NUMBER; i++){
             if(memcmp(text_instruction->operation.operation_name, instruction_set[i].op_name, INSTRUCTION_SIZE) == 0){
                 text_instruction->operation.num_of_args = instruction_set[i].num_of_args;
+                text_instruction->operation.op_code = i;
                 *symb_count += op_name_length;
                 return;
             }
@@ -453,22 +454,17 @@ void print_label_table(LabelTable* label_table){
 }
 
 //___________________TESTTTTTTTTTTTTTTTTT_________________________
-void parse_text_asm_file(const char* file_name){
+void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instruction_array, LabelTable* label_table){
     FILE *file = fopen(file_name, "r");
     if (!file) {
         perror("Failed to open file");
     }
 
     // Initialization struct for text asm representation storage
-    TextInstructionArray text_instr_arr;
-    TextInstructionArray* text_instruction_array = &text_instr_arr;
-
     text_instruction_array->count = 0;
     text_instruction_array->capacity = INIT_TEXT_INSTR_ARR_SIZE;
     text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity, sizeof(TextInstruction));
 
-    LabelTable lab_tab;
-    LabelTable* label_table = &lab_tab;
 
     label_table->capacity = LABEL_TABLE_INIT_SIZE;
     label_table->label_list = (Label*)calloc(label_table->capacity, sizeof(Label));
@@ -487,14 +483,7 @@ void parse_text_asm_file(const char* file_name){
     printf("Num of parsed lines: %u\n", text_instruction_array->count);
 
     print_label_table(label_table);
-
-    free_label_table(label_table);
-    free_text_instruction_list(text_instruction_array);
     
     fclose(file);
 }
 
-int main(){
-    parse_text_asm_file("../examples/fibonacci.myasm");
-    return 0;
-}
