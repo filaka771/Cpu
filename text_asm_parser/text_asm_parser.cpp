@@ -458,6 +458,7 @@ void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instr
     FILE *file = fopen(file_name, "r");
     if (!file) {
         perror("Failed to open file");
+        abort();
     }
 
     // Initialization struct for text asm representation storage

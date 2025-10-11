@@ -14,17 +14,19 @@
 #ifndef INSTRUCTIONS_H
 #define INSTRUCTIONS_H
 
-typedef struct Instruction{
-    uint32_t op_name;
-    uint32_t imm [3];
-}Instruction;
+// Bin instruction representation
 
-typedef struct InstructionArray{
+typedef struct BinInstruction{
+    uint32_t operation;
+    uint32_t arg_list[3];
+} BinInstruction;
+
+typedef struct BinInstructionArray{
+    BinInstruction* bin_instruction_list;
     uint32_t count;
-    Instruction* instruction_list;
-}InstructionList;
+} BinInstructionArray;
 
-//-------------------------------------------------------
+// Text instruction representation
 
 
 typedef struct TextInstructionArg{
@@ -49,6 +51,7 @@ typedef struct TextInstructionArray{
     uint32_t capacity;
     TextInstruction* text_instruction_list;
 }TextInstructionArray;
+
 //-------------------------------------------------------
 
 typedef struct InstructionSet {

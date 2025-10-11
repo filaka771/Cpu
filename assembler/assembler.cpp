@@ -1,4 +1,3 @@
-#include "./assembler.h"
 #include "../instructions.h"
 #include "../text_asm_parser/text_asm_parser.h"
 #include <stdio.h>
@@ -7,82 +6,93 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
-void assemble_flag(uint32_t* bin_flag, char* text_flag, int* arg_count){
-    int flag_count = 0;
-
-    while(text_flag[flag_count] != '\0'){
-        //Find flag in instruction flag array    
-        for(int i = 0; i < INSTRUCTIONS_FLAGS_NUMBER; i ++){
-            if(text_flag[flag_count] == instruction_flag[i]){
-                *bin_flag |= 1 << (i + flag_count * 8);
-            }
-            if(text_flag[flag_count] == ' '){
-                continue;
+void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count) {
+    // Each arg_count corresponds to a specific byte:
+    // arg_count = 0 -> byte 1 (bits 16-23)
+    // arg_count = 1 -> byte 2 (bits 8-15)
+    // arg_count = 2 -> byte 3 (bits 0-7)
+    
+    int byte_position = 16 - (arg_count * 8);  // Start bit position for this arg's flags
+    
+    for (int flag_idx = 0; flag_idx < INSTRUCTIONS_FLAGS_NUMBER && text_flag[flag_idx] != '\0'; flag_idx++) {
+        if (text_flag[flag_idx] == ' ') {
+            continue;  // Skip spaces
+        }
+        
+        // Find this flag character in the instruction_flag array
+        for (int i = 0; i < INSTRUCTIONS_FLAGS_NUMBER; i++) {
+            if (text_flag[flag_idx] == instruction_flag[i]) {
+                // Set the corresponding bit in the flag byte
+                *bin_operation |= (1 << (byte_position + i));
+                break;  // Exit inner loop once found
             }
         }
-        flag_count ++;
     }
 }
 
 
 void assemble_text_instruction(BinInstruction* bin_instruction, TextInstruction* text_instruction){
-    // Verify that layout of bin instructions support given instructions and flags sets.
-    if(INSTRUCTIONS_FLAGS_NUMBER > MAX_FLAG_NUMBER){
-        fprintf(stderr, "Instructions layout doesn't support %d different flags. Maximum number of flags is %d", INSTRUCTIONS_FLAGS_NUMBER, MAX_FLAG_NUMBER);
-        abort();
-    }
-
-    if(INSTRUCTIONS_SET_NUMBER > MAX_INSTRUCTIONS_NUMBER){
-        fprintf(stderr, "Instructions layout doesn't support %d different instructions. Maximum number of instructions is %d", INSTRUCTIONS_SET_NUMBER, MAX_INSTRUCTIONS_NUMBER);
-        abort();
-    }
-
-    int arg_count = 0;
-
-    // Set all bits in operation buffer to 0
-    bin_instruction->operation &= 1 << 31;
-    bin_instruction->operation &= 1;
-
-    // Assemble operation code
-    bin_instruction->operation = bin_instruction->operation && text_instruction->operation.op_code << 24;
-
-    // Asseble args and flags
-    while(arg_count < text_instruction->operation.num_of_args){
+    // Clear operation
+    bin_instruction->operation = 0;
+    
+    // Set instruction code in byte 0
+    bin_instruction->operation |= (text_instruction->operation.op_code << 24);
+    
+    printf("op code: %d  arg list: %s  bin rep: %b\n", text_instruction->operation.op_code,
+           instruction_set[text_instruction->operation.op_code].op_name,
+           (bin_instruction->operation >> 24) & 0xFF);
+    // Assemble args and flags
+    for(uint32_t arg_count = 0; arg_count < text_instruction->operation.num_of_args; arg_count++){
         bin_instruction->arg_list[arg_count] = text_instruction->imm[arg_count].imm;
-        assemble_flag(&bin_instruction->operation, text_instruction->imm[arg_count].imm_flag, &arg_count);
-
-        arg_count ++;
+        //Debug
+        
+        // Pass the operation field and current arg_count
+        assemble_flag(&bin_instruction->operation,
+                      text_instruction->imm[arg_count].imm_flag,
+                      arg_count);
     }
 }
 
+//--------------------DEBUG----------------------
+void print_bin_instruction(BinInstruction* bin_instruction){
+    printf("%b %b %b %b\n", bin_instruction->operation, bin_instruction->arg_list[0], bin_instruction->arg_list[1], bin_instruction->arg_list[2]);
+}
+//--------------------DEBUG----------------------
 void assemble_text_instructions_array(BinInstructionArray* bin_instructions_array, TextInstructionArray* text_instructions_array){
     for(uint32_t instructions_count = 0; instructions_count < text_instructions_array->count; instructions_count ++){
         assemble_text_instruction(&bin_instructions_array->bin_instruction_list[instructions_count], &text_instructions_array->text_instruction_list[instructions_count]);
+        print_bin_instruction(&bin_instructions_array->bin_instruction_list[instructions_count]);
     }
 }
 
-void write_bin_file(BinInstructionArray* bin_instructions_array, const char* output_bin_file){
-    int fd = open(output_bin_file, O_RDWR | O_CREAT | O_TRUNC,  0666);
 
+void write_bin_file(BinInstructionArray* bin_instructions_array, const char* output_bin_file){
+    int fd = open(output_bin_file, O_RDWR | O_CREAT | O_TRUNC, 0644);  
     if(fd == -1){
-        fprintf(stderr, "Error while opening output file!");
+        fprintf(stderr, "Error opening output file");
         abort();
     }
 
     size_t bin_file_size = bin_instructions_array->count * sizeof(BinInstruction);
 
-    ftruncate(fd, bin_file_size);
+    if(ftruncate(fd, bin_file_size) == -1){
+        close(fd);
+        fprintf(stderr, "Error truncating file");
+        abort();
+    }
 
     BinInstruction* mapped_mem = (BinInstruction*)mmap(NULL, bin_file_size, PROT_WRITE, MAP_SHARED, fd, 0);
-
     if(mapped_mem == MAP_FAILED){
         close(fd);
-        fprintf(stderr, "ERROR: Cannot map memory for bin file!");
+        fprintf(stderr, "Cannot map memory for bin file");
         abort();
     }
 
     memcpy(mapped_mem, bin_instructions_array->bin_instruction_list, bin_file_size);
-
+    
+    // Ensure data is written to disk
+    msync(mapped_mem, bin_file_size, MS_SYNC);
+    
     munmap(mapped_mem, bin_file_size);
     close(fd);
 }
@@ -99,8 +109,8 @@ int main(int argc, char* argv[]){
     
 
     if(argc == 3){
-         text_asm_file = argv[1];
-         output_bin_file = argv[2];
+        text_asm_file = argv[1];
+        output_bin_file = argv[2];
     }
 
     else{
@@ -136,6 +146,6 @@ int main(int argc, char* argv[]){
     free_text_instruction_list(text_instructions_array);
     free_label_table(label_table);
 
-    free(bin_instructions_array);
+    free(bin_instructions_array->bin_instruction_list);
     return 0;
 }
