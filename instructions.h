@@ -1,4 +1,5 @@
 #include<stdint.h>
+#include "./cpu/cpu.h"
 
 #define INSTRUCTION_SIZE 3
 #define ARG_SIZE 2
@@ -56,7 +57,8 @@ typedef struct TextInstructionArray{
 
 typedef struct InstructionSet {
     const char* op_name;  
-    int8_t num_of_args;
+    const int8_t num_of_args;
+    void (*cpu_instruction_pointer)(Cpu* cpu);
 } InstructionSet; 
 
 extern const char parse_stoping_symbols[PARSE_STOPING_SYMB_NUMBER];

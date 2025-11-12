@@ -1,0 +1,3 @@
+[submodule "cpu/stack"]
+	path = cpu/stack
+	url = git@github.com:filaka771/Stack.git
