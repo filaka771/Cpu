@@ -62,35 +62,36 @@ void loader(const char* bin_file_name, Stack* stack){
 
 //--------------------------------------------------------------------------------------------------------
 void instruction_execute(Cpu* cpu){
-    uint8_t op_code = *(uint8_t*)stack_get_element(cpu->stack, cpu->rsp);
+    uint8_t op_code = *(uint8_t*)stack_get_element(cpu->stack, cpu->regs[16]);
 
     instruction_set[op_code].cpu_instruction_pointer(cpu);
-
-
-
 }
 
-void cpu_execute(Cpu cpu){
-
-};
+void cpu_execute(Cpu* cpu){
+    while(cpu->running){
+        instruction_execute(cpu);
+    }
+}
 
 int main(int argc,char* argv[]){
     // Check number of args and set bin_file_name
     if(argc != 2){
-        fprintf(stderr, "Wrong number of args");
+        fprintf(stderr, "Wrong number of args!\n");
         abort();
     }
 
     const char* bin_file_name = argv[1];
 
     // Initialize buffer for registers
-    uint32_t registers[NUM_OF_REGISTERS];
+    Cpu cpu_struct;
+    Cpu* cpu = &cpu_struct;
+
 
     // Initialize stack
-    Stack* stack = stack_init(1000 * BIN_INSTRUCTION_SIZE, sizeof(uint8_t));
+    cpu->stack = stack_init(1000 * BIN_INSTRUCTION_SIZE, sizeof(uint8_t));
 
     // Program loading
-    loader(bin_file_name, stack);
+    loader(bin_file_name, cpu->stack);
 
     // Program execution
 
