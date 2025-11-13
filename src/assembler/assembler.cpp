@@ -1,5 +1,5 @@
-#include "../instructions.h"
-#include "../text_asm_parser/text_asm_parser.h"
+#include "../../include/instructions.h"
+#include "./text_asm_parser/text_asm_parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,24 +7,17 @@
 #include <fcntl.h>
 #include <unistd.h>
 void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count) {
-    // Each arg_count corresponds to a specific byte:
-    // arg_count = 0 -> byte 1 (bits 16-23)
-    // arg_count = 1 -> byte 2 (bits 8-15)
-    // arg_count = 2 -> byte 3 (bits 0-7)
-    
-    int byte_position = 16 - (arg_count * 8);  // Start bit position for this arg's flags
-    
+    int byte_position = 16 - (arg_count * 8);
+
     for (int flag_idx = 0; flag_idx < INSTRUCTIONS_FLAGS_NUMBER && text_flag[flag_idx] != '\0'; flag_idx++) {
         if (text_flag[flag_idx] == ' ') {
-            continue;  // Skip spaces
+            continue;  
         }
         
-        // Find this flag character in the instruction_flag array
         for (int i = 0; i < INSTRUCTIONS_FLAGS_NUMBER; i++) {
             if (text_flag[flag_idx] == instruction_flag[i]) {
-                // Set the corresponding bit in the flag byte
                 *bin_operation |= (1 << (byte_position + i));
-                break;  // Exit inner loop once found
+                break;
             }
         }
     }
@@ -32,21 +25,16 @@ void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count
 
 
 void assemble_text_instruction(BinInstruction* bin_instruction, TextInstruction* text_instruction){
-    // Clear operation
     bin_instruction->operation = 0;
     
-    // Set instruction code in byte 0
     bin_instruction->operation |= (text_instruction->operation.op_code << 24);
     
     printf("op code: %d  arg list: %s  bin rep: %b\n", text_instruction->operation.op_code,
            instruction_set[text_instruction->operation.op_code].op_name,
            (bin_instruction->operation >> 24) & 0xFF);
-    // Assemble args and flags
     for(uint32_t arg_count = 0; arg_count < text_instruction->operation.num_of_args; arg_count++){
         bin_instruction->arg_list[arg_count] = text_instruction->imm[arg_count].imm;
-        //Debug
         
-        // Pass the operation field and current arg_count
         assemble_flag(&bin_instruction->operation,
                       text_instruction->imm[arg_count].imm_flag,
                       arg_count);
