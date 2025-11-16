@@ -1,5 +1,5 @@
-#include "./instructions.h"
-#include "./cpu/cpu_instructions.h"
+#include "../../include/instructions.h"
+#include "../cpu_emulator/cpu_instructions.h"
 
 
 const char instruction_flag [INSTRUCTIONS_FLAGS_NUMBER] = {'*', 'x'};
@@ -14,7 +14,7 @@ const InstructionSet instruction_set[] = {
     {"sub", 3, &sub},
     {"mul", 3, &mul},
     {"div", 3, &div},
-    {"sqr", 3, &sqr},
+    {"sqr", 2, &sqr},
     {"bne", 3, &bne},
     {"beq", 3, &beq},
     {"bgt", 3, &bgt},

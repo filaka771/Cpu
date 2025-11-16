@@ -31,6 +31,8 @@ void mul(Cpu* cpu);
 
 void div(Cpu* cpu);
 
+void sqr(Cpu* cpu);
+
 // --------------------------------------------------------------------
 
 void bne(Cpu* cpu);

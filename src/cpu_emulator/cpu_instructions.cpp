@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../instructions.h"
+#include "../../include/instructions.h"
 #include "./stack/stack.h"
 #include "./cpu.h"
 #include "./cpu_instructions.h"
@@ -237,13 +237,20 @@ void div(Cpu* cpu){
     write_in_memory(cpu, &cpu_instruction_args.cpu_imm_args[0], dest_value);
 }
 
+void sqr(Cpu* cpu){
+    CpuInstructionArgs cpu_instruction_args;
+
+    get_args(cpu, &cpu_instruction_args, instruction_set[7].num_of_args);
+
+}
+
 // --------------------------------------------------------------------
 // First two args compaired, last used as adr
 void bne(Cpu* cpu){
 
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[7].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[8].num_of_args);
 
     uint32_t value1 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
     uint32_t value2 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[1]);
@@ -257,8 +264,8 @@ void beq(Cpu* cpu){
 
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[8].num_of_args);
-
+    get_args(cpu, &cpu_instruction_args, instruction_set[9].num_of_args);
+    
     uint32_t value1 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
     uint32_t value2 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[1]);
 
@@ -271,7 +278,7 @@ void bgt(Cpu* cpu){
 
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[9].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[10].num_of_args);
 
     uint32_t value1 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
     uint32_t value2 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[1]);
@@ -285,7 +292,7 @@ void blt(Cpu* cpu){
 
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[10].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[11].num_of_args);
 
     uint32_t value1 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
     uint32_t value2 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[1]);
@@ -299,7 +306,7 @@ void bge(Cpu* cpu){
 
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[11].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[12].num_of_args);
 
     uint32_t value1 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
     uint32_t value2 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[1]);
@@ -313,7 +320,7 @@ void ble(Cpu* cpu){
 
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[12].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[13].num_of_args);
 
     uint32_t value1 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
     uint32_t value2 = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[1]);
@@ -325,7 +332,7 @@ void ble(Cpu* cpu){
 
 void baw(Cpu* cpu){
     CpuInstructionArgs cpu_instruction_args;
-    get_args(cpu, &cpu_instruction_args, instruction_set[13].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[14].num_of_args);
 
     cpu->regs[16] = cpu_instruction_args.cpu_imm_args[0].cpu_imm_arg;
 }
@@ -335,7 +342,7 @@ void baw(Cpu* cpu){
 void str(Cpu* cpu){
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[13].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[15].num_of_args);
 
     if(!is_register(&cpu_instruction_args[0])){
         fprintf(stderr, "Instruction str requires register as imm!\n");
@@ -351,7 +358,7 @@ void str(Cpu* cpu){
 void ldr(Cpu* cpu){
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[13].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[16].num_of_args);
 
     if(!is_register(&cpu_instruction_args[0])){
         fprintf(stderr, "Instruction str requires register as imm!\n");
@@ -368,7 +375,7 @@ void ldr(Cpu* cpu){
 void bfn(Cpu* cpu){
     CpuInstructionArgs cpu_instruction_args;
 
-    get_args(cpu, &cpu_instruction_args, instruction_set[13].num_of_args);
+    get_args(cpu, &cpu_instruction_args, instruction_set[17].num_of_args);
 
     cpu->regs[17] = cpu->regs[16];
     cpu->regs[16] = read_from_memory(cpu, &cpu_instruction_args[0]);
