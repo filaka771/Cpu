@@ -1,0 +1,6 @@
+#include <stdlib.h>
+#include <openssl/sha.h>
+
+void* buffer_1 = calloc(24,  1);
+unsigned char hash_1[24];
+
