@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "./stack/stack.h"
+#include "./stack.h"
 
 #ifndef CPU_H
 #define CPU_H

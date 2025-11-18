@@ -3,11 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../../include/instructions.h"
-#include "./stack/stack.h"
-#include "./cpu.h"
-#include "./cpu_instructions.h"
-#include "./stack/stack.h"
+#include "../include/instructions.h"
+#include "../include/cpu.h"
+#include "../include/cpu_instructions.h"
+#include "../include/stack.h"
 
 static void read_bin_arg(Cpu* cpu, CpuInstructionArgs* cpu_instruction_args, int arg_count){
     cpu_instruction_args->cpu_imm_args[arg_count].cpu_imm_arg =

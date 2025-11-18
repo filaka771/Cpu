@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#include "./stack/stack.h"
+#include "./stack.h"
 #include "./cpu.h"
 
 #ifndef CPU_INSTRUCTIONS

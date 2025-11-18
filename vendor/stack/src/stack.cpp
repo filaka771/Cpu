@@ -5,20 +5,10 @@
 
 #include <openssl/sha.h>
 
-#include "exceptions.h"
-#include "errors.h"
+#include "../include/exceptions.h"
+#include "../errors/errors.h"
+#include "../include/stack.h"
 
-#define HASH_SIZE SHA256_DIGEST_LENGTH
-#define ELEM_TYPE char
-
-
-typedef struct Stack {
-    void* buffer;
-    size_t elem_size;
-    size_t capacity;
-    size_t count;
-    unsigned char hash[HASH_SIZE];
-} Stack;
 
 //-------------------------------------Stack_health_check-------------------------------------
 

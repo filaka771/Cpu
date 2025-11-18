@@ -1,8 +1,6 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "stack.cpp"
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +9,13 @@
 
 #define HASH_SIZE SHA256_DIGEST_LENGTH
 
+typedef struct Stack {
+    void* buffer;
+    size_t elem_size;
+    size_t capacity;
+    size_t count;
+    unsigned char hash[HASH_SIZE];
+} Stack;
 
 // --- Core Functions ---
 void* stack_get_element(Stack* stack, size_t position);
