@@ -343,12 +343,12 @@ void str(Cpu* cpu){
 
     get_args(cpu, &cpu_instruction_args, instruction_set[15].num_of_args);
 
-    if(!is_register(cpu_instruction_args[0])){
+    if(!is_register(&cpu_instruction_args.cpu_imm_args[0])){
         fprintf(stderr, "Instruction str requires register as imm!\n");
         abort();
     }
 
-    uint32_t value = read_from_memory(cpu, &cpu_instruction_args[0]);
+    uint32_t value = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
 
     write_uint_on_stack(cpu->stack, cpu->regs[16], value);
     cpu->regs[16] += BIN_INSTRUCTION_SIZE;
@@ -359,14 +359,14 @@ void ldr(Cpu* cpu){
 
     get_args(cpu, &cpu_instruction_args, instruction_set[16].num_of_args);
 
-    if(!is_register(cpu_instruction_args[0])){
+    if(!is_register(&cpu_instruction_args.cpu_imm_args[0])){
         fprintf(stderr, "Instruction str requires register as imm!\n");
         abort();
     }
 
     uint32_t value = *get_uint_from_stack(cpu->stack, cpu->regs[16] - BIN_INSTRUCTION_SIZE);
 
-    write_in_memory(cpu, cpu_instruction_args[0], value);
+    write_in_memory(cpu, &cpu_instruction_args.cpu_imm_args[0], value);
 }
 
 // --------------------------------------------------------------------
@@ -377,7 +377,7 @@ void bfn(Cpu* cpu){
     get_args(cpu, &cpu_instruction_args, instruction_set[17].num_of_args);
 
     cpu->regs[17] = cpu->regs[16];
-    cpu->regs[16] = read_from_memory(cpu, &cpu_instruction_args[0]);
+    cpu->regs[16] = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
 }
 
 

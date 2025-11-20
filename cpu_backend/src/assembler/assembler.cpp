@@ -1,5 +1,6 @@
 #include "instructions/instructions.h"
 #include "text_asm_parser/text_asm_parser.h"
+#include "stack/stack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

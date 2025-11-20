@@ -9,7 +9,6 @@
 #define LABEL_SIZE 100
 #define LABEL_TABLE_INIT_SIZE 1000
 
-
 typedef struct Label{
     uint label_size;
     char label[LABEL_SIZE];
