@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/assembler.dir/link.d CMakeFiles/assembler.dir/src/assembler/assembler.cpp.o -o assembler  libmain_product.a ../vendor/libtools_lib.a

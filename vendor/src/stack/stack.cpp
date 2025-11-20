@@ -5,9 +5,9 @@
 
 #include <openssl/sha.h>
 
-#include "../include/exceptions.h"
-#include "../errors/errors.h"
-#include "../include/stack.h"
+#include "exceptions/exceptions.h"
+#include "errors/errors.h"
+#include "stack/stack.h"
 
 
 //-------------------------------------Stack_health_check-------------------------------------

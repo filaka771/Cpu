@@ -1,8 +1,7 @@
-# Stack library
-add_library(stack_lib STATIC
-    src/stack/stack.cpp
+add_library(tools_lib STATIC
+    src/stack/stack.cpp    # This is OUR file to manage
 )
 
-target_include_directories(stack_lib PUBLIC
+target_include_directories(tools_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

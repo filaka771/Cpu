@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "./cpu.h"
-#include "./cpu_instructions.h"
-#include "../instructions.h"
-#include "./stack/stack.h"
-#include "stack/errors.h"
+#include "cpu_emulator/cpu.h"
+#include "cpu_emulator/cpu_instructions.h"
+#include "instructions/instructions.h"
+#include "stack/stack.h"
+#include "errors/errors.h"
 
 uint32_t* get_uint_from_stack(Stack* stack, uint32_t address){
     uint32_t* uint_pointer;

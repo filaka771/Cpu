@@ -1,0 +1,9 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/alex/Projects/cpu/build/cmake_install.cmake",
+		"/home/alex/Projects/cpu/build/vendor/cmake_install.cmake",
+		"/home/alex/Projects/cpu/build/cpu_backend/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,5 +1,5 @@
-#include "../include/instructions.h"
-#include "../include/cpu_instructions.h"
+#include "instructions/instructions.h"
+#include "cpu_emulator/cpu_instructions.h"
 
 
 const char instruction_flag [INSTRUCTIONS_FLAGS_NUMBER] = {'*', 'x'};

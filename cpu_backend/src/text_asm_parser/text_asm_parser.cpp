@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#include "text_asm_parser.h"
-#include "../instructions.h"
+#include "text_asm_parser/text_asm_parser.h"
+#include "instructions/instructions.h"
 
 // LABEL_SIZE must be bigger then 8, to be possible save ptr on allocated buffer
 

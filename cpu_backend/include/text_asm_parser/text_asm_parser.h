@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "../instructions.h"
+#include "instructions/instructions.h"
 
 #define LINE_SIZE 300
 #define LABEL_SIZE 100

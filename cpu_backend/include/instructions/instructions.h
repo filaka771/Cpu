@@ -1,5 +1,5 @@
 #include<stdint.h>
-#include "./cpu.h"
+#include "cpu_emulator/cpu.h"
 
 #define INSTRUCTION_SIZE 3
 #define ARG_SIZE 2

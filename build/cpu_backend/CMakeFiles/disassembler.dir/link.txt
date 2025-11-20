@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/disassembler.dir/link.d CMakeFiles/disassembler.dir/src/disassembler/disassembler.cpp.o -o disassembler  libmain_product.a ../vendor/libtools_lib.a
