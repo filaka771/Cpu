@@ -5,6 +5,7 @@
 #include "cpu_emulator/cpu.h"
 #include "cpu_emulator/cpu_instructions.h"
 #include "instructions/instructions.h"
+#include "exceptions/exceptions.h"
 #include "stack/stack.h"
 #include "errors/errors.h"
 
