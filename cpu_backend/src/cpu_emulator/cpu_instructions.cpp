@@ -343,7 +343,7 @@ void str(Cpu* cpu){
 
     get_args(cpu, &cpu_instruction_args, instruction_set[15].num_of_args);
 
-    if(!is_register(&cpu_instruction_args[0])){
+    if(!is_register(cpu_instruction_args[0])){
         fprintf(stderr, "Instruction str requires register as imm!\n");
         abort();
     }
@@ -359,7 +359,7 @@ void ldr(Cpu* cpu){
 
     get_args(cpu, &cpu_instruction_args, instruction_set[16].num_of_args);
 
-    if(!is_register(&cpu_instruction_args[0])){
+    if(!is_register(cpu_instruction_args[0])){
         fprintf(stderr, "Instruction str requires register as imm!\n");
         abort();
     }
