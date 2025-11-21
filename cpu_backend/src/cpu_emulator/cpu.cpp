@@ -9,23 +9,6 @@
 #include "stack/stack.h"
 #include "errors/errors.h"
 
-uint32_t* get_uint_from_stack(Stack* stack, uint32_t address){
-    uint32_t* uint_pointer;
-
-    TRY{
-        uint_pointer = (uint32_t*)stack_get_element(stack, address + 4) - 4;
-    }
-
-    CATCH(ERR_ELEM_INDEX_OUT_OF_RANGE){
-        fprintf(stderr, "Stack overflow!\n");
-        abort();
-    }
-
-    END_TRY;
-
-    return uint_pointer;
-}
-
 void loader(const char* bin_file_name, Stack* stack){
     FILE* bin_file = fopen(bin_file_name, "r");
 
@@ -89,7 +72,10 @@ int main(int argc,char* argv[]){
 
 
     // Initialize stack
-    cpu->stack = stack_init(1000 * BIN_INSTRUCTION_SIZE, sizeof(uint8_t));
+    Stack stk;
+    Stack* stack = &stk;
+    stack_init(stack, 1000 * BIN_INSTRUCTION_SIZE, sizeof(uint8_t));
+    cpu->stack = stack;
 
     // Program loading
     loader(bin_file_name, cpu->stack);

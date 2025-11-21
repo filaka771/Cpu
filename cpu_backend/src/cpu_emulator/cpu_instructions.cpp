@@ -371,7 +371,7 @@ void ldr(Cpu* cpu){
 
 // --------------------------------------------------------------------
 
-void bfn(Cpu* cpu){
+void cfn(Cpu* cpu){
     CpuInstructionArgs cpu_instruction_args;
 
     get_args(cpu, &cpu_instruction_args, instruction_set[17].num_of_args);
@@ -379,7 +379,6 @@ void bfn(Cpu* cpu){
     cpu->regs[17] = cpu->regs[16];
     cpu->regs[16] = read_from_memory(cpu, &cpu_instruction_args.cpu_imm_args[0]);
 }
-
 
 void ret(Cpu* cpu){
     cpu->regs[16] = cpu->regs[17];

@@ -19,11 +19,11 @@ typedef struct Stack {
 
 // --- Core Functions ---
 void* stack_get_element(Stack* stack, size_t position);
-Stack* stack_init(size_t el_num, size_t el_size);
-Stack* stack_copy(Stack* stack);
+void stack_init(Stack* stack, size_t el_num, size_t el_size);
+void stack_copy(Stack* new_stack, Stack* old_stack);
 
 // --- Stack Operations ---
-void stack_modify_element(Stack* stack, void* elem, size_t postition);
+void stack_modify_element(Stack* stack, void* elem, size_t position);
 void stack_health_check(Stack* stack);
 void stack_free(Stack* stack);
 void stack_push(Stack* stack, void* elem);

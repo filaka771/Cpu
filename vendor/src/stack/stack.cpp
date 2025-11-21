@@ -5,10 +5,12 @@
 
 #include <openssl/sha.h>
 
+#include "stack/stack.h"
 #include "exceptions/exceptions.h"
 #include "errors/errors.h"
-#include "stack/stack.h"
 
+#define HASH_SIZE SHA256_DIGEST_LENGTH
+#define ELEM_TYPE char
 
 //-------------------------------------Stack_health_check-------------------------------------
 
@@ -113,15 +115,15 @@ void stack_free(Stack* stack) {
     free(stack->buffer);
 }
 
-void stack_copy(Stack* stack, Stack* new_stack){
-    stack_health_check(stack);
-    if (new_stack->capacity < stack->capacity)
-        stack_realloc(new_stack, stack->capacity);
+void stack_copy(Stack* new_stack, Stack* old_stack){
+    stack_health_check(old_stack);
+    if (new_stack->capacity < old_stack->capacity)
+        stack_realloc(new_stack, old_stack->capacity);
 
     //TODO: Make stack_init doesn't hash stack before buffer will be copied.
-    memcpy((char*)new_stack->buffer + 8,(char*)stack->buffer + 8, stack->capacity - 16);
+    memcpy((char*)new_stack->buffer + 8,(char*)old_stack->buffer + 8, old_stack->capacity - 16);
 
-    new_stack->count = stack->count;
+    new_stack->count = old_stack->count;
     stack_canary_set(new_stack);
     stack_hash(new_stack);
 

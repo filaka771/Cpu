@@ -56,9 +56,6 @@ void str(Cpu* cpu);
 void ldr(Cpu* cpu);
 
 // --------------------------------------------------------------------
-
-void bfn(Cpu* cpu);
-
 void cfn(Cpu* cpu);
 
 void ret(Cpu* cpu);

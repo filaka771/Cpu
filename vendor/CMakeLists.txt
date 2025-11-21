@@ -1,5 +1,5 @@
 add_library(tools_lib STATIC
-    src/stack/stack.cpp    # This is OUR file to manage
+    src/stack/stack.cpp
 )
 
 target_include_directories(tools_lib PUBLIC

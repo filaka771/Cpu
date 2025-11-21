@@ -2,8 +2,8 @@ find_package(OpenSSL REQUIRED)
 
 add_library(main_product STATIC
     src/instructions/instructions.cpp
-    src/cpu_emulator/cpu.cpp
     src/cpu_emulator/cpu_instructions.cpp
+  
 )
 
 add_library(parser STATIC
@@ -14,12 +14,14 @@ target_include_directories(main_product PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+
 target_link_libraries(main_product
     PRIVATE
     tools_lib
     OpenSSL::SSL
     OpenSSL::Crypto
 )
+
 
 add_executable(assembler src/assembler/assembler.cpp)
 add_executable(disassembler src/disassembler/disassembler.cpp)
@@ -38,7 +40,7 @@ target_link_libraries(disassembler
     main_product
 ) 
 
-target_link_libraries(cpu_emulator 
+target_link_libraries(cpu_emulator
     PRIVATE 
     main_product
     OpenSSL::SSL
