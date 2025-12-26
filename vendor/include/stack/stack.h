@@ -20,6 +20,7 @@ typedef struct Stack {
 // --- Core Functions ---
 void* stack_get_element(Stack* stack, size_t position);
 void stack_init(Stack* stack, size_t el_num, size_t el_size);
+void stack_init_from_file(Stack* stack, size_t el_size, const char* file_name);
 void stack_copy(Stack* new_stack, Stack* old_stack);
 
 // --- Stack Operations ---

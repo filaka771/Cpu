@@ -4,10 +4,16 @@
 #include <string.h>
 
 #include <openssl/sha.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "stack/stack.h"
 #include "exceptions/exceptions.h"
 #include "errors/errors.h"
+
+
 
 #define HASH_SIZE SHA256_DIGEST_LENGTH
 #define ELEM_TYPE char
@@ -85,6 +91,65 @@ void stack_init(Stack* stack, size_t el_num, size_t el_size) {
         free(stack);
         THROW(3, "Failed to allocate Stack buffer");
     }
+
+    stack_canary_set(stack);
+
+    stack_poison(stack);
+    stack_hash(stack);
+}
+
+
+void stack_init_from_file(Stack* stack, size_t el_size, const char* file_name) {
+    // Open with low-level API
+    int fd = open(file_name, O_RDONLY);
+    if (fd == -1) {
+        fprintf(stderr, "Error while opening file!");
+        abort();
+    }
+
+    // Get file size using fstat
+    struct stat sb;
+    if (fstat(fd, &sb) == -1) {
+        fprintf(stderr, "Failed to get file size!");
+        close(fd);
+        abort();
+    }
+    
+    size_t file_size = sb.st_size;
+
+    if(file_size % el_size != 0){
+        fprintf(stderr, "File could not be interpreted as list of elements with size %zu!", el_size);
+        close(fd);
+        abort();
+    }
+
+    // Map the file
+    void* mapped = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd); 
+
+    if (mapped == MAP_FAILED){
+        fprintf(stderr, "ERROR WHILE FILE MAPPING!");
+        abort();
+    }
+
+    // Stack initialization
+    stack->elem_size = el_size;
+    stack->capacity  = (size_t)((file_size + 16) * 1.5);
+    stack->count     = file_size / el_size;
+
+    stack->buffer = calloc(1, stack->capacity);
+
+    if (!stack->buffer){
+        munmap(mapped, file_size);
+        free(stack);
+        THROW(3, "Failed to allocate Stack buffer");
+    }
+
+    memcpy(((uint8_t*)stack->buffer + 8), mapped, file_size);
+    
+    // Clean up
+    munmap(mapped, file_size);
+
 
     stack_canary_set(stack);
 
