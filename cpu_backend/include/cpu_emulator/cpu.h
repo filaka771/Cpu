@@ -4,8 +4,14 @@
 #ifndef CPU_H
 #define CPU_H
 
-#define NUM_OF_REGISTERS 20 
+#define NUM_OF_REGISTERS 19
+#define RBP NUM_OF_REGISTERS - 3
+#define RPC NUM_OF_REGISTERS - 2
+#define RCC NUM_OF_REGISTERS - 1
+
 #define BIN_INSTRUCTION_SIZE 16
+
+#define DEBUG 1
 
 typedef struct Cpu{
     // reg0, ... reg15 - general purpose registers
