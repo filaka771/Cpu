@@ -135,7 +135,7 @@ void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstru
 void print_text_instruction(TextInstruction* text_instruction){
     printf("%x %s", text_instruction->address, text_instruction->operation.operation_name);
     for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
-        printf(" %s %u", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+        printf(" %s %x", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
     }
     printf("\n");
 }

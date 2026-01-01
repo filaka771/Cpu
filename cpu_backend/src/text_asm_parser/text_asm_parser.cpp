@@ -90,7 +90,7 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
             printf("Saved label name: %s address: %u\n", current_label->label, current_label->address);
         }
 
-            // If label size is bigger then allocated buffer
+        // If label size is bigger then allocated buffer
         else{
             void* label_buf = calloc(current_label->label_size, sizeof(char));
             memcpy(label_buf, &line_buf[symb_count], current_label->label_size);
@@ -167,13 +167,18 @@ void print_args(uint32_t arg_count, TextInstruction* text_instruction){
 }
 
 //--------------------------------FOR_DEBUG--------------------
-static bool check_flag(char flag){
+static bool is_flag_symbol(char flag){
     for(int j = 0; j < INSTRUCTIONS_FLAGS_NUMBER; j ++){
         if (flag == instruction_flag[j]) {
             return true;
         }
     }
     return false;
+}
+
+static bool is_hex_digit(char digit) {
+    return isdigit(digit) || 
+        ('a' <= tolower(digit) && tolower(digit) <= 'f');
 }
 
 static bool is_ignorable_symbol(char symbol){
@@ -201,8 +206,8 @@ static ParserState set_arg_flag (TextInstruction* text_instruction, char* arg_fl
     }
 
     int arg_length = 0;
-    while(!isdigit(*(arg_flag + arg_length)) && *(arg_flag + arg_length) != ':' && *(arg_flag + arg_length) != ' '){
-        bool flag_found = check_flag(*(arg_flag + arg_length));
+    while(!is_hex_digit(*(arg_flag + arg_length)) && *(arg_flag + arg_length) != ':' && *(arg_flag + arg_length) != ' '){
+        bool flag_found = is_flag_symbol(*(arg_flag + arg_length));
         if(flag_found){
             arg_length ++;
             continue;
@@ -235,14 +240,14 @@ static ParserState set_num_arg(TextInstruction* text_instruction, char* num_arg,
 
     // Parse num arg
     char* end_of_arg = NULL;
-    long long arg = strtoll(num_arg, &end_of_arg, 10);
+    long long arg = strtoll(num_arg, &end_of_arg, 16);
     if(arg > UINT_MAX){
         perror("To large arg. Arg must me less then UINT_MAX!");
         abort();
     }
 
     text_instruction->imm[arg_count].imm = (uint32_t)arg;
-    *symb_count += end_of_arg - num_arg;
+    *symb_count += (end_of_arg - num_arg);
 
     parser_state.flag_seted = false;
     parser_state.arg_seted = true;
@@ -266,7 +271,7 @@ static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* l
         }
     }
 
-        // Case when label not in label table
+    // Case when label not in label table
     else{
         // Realloc label list if needed
         if(label_table->count == label_table->capacity){
@@ -338,14 +343,13 @@ static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstr
         }
 
         // Parse flag
-        // TODO: Make func, which verify that symb is in list of flags
-        if((isalpha(line_buf[symb_count]) || line_buf[symb_count] == '*') && arg_count < text_instruction->operation.num_of_args){
+        if((is_flag_symbol(line_buf[symb_count])) && arg_count < text_instruction->operation.num_of_args){
             parser_state = set_arg_flag(text_instruction, &line_buf[symb_count], &arg_count,  &symb_count, parser_state);
             continue;
         }
 
         // Parse num args
-        if(isdigit(line_buf[symb_count]) && arg_count < text_instruction->operation.num_of_args){
+        if(is_hex_digit(line_buf[symb_count]) && arg_count < text_instruction->operation.num_of_args){
             parser_state = set_num_arg(text_instruction, &line_buf[symb_count], arg_count, &symb_count, parser_state);
             arg_count ++;
             continue;
@@ -360,10 +364,14 @@ static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstr
             continue;
         }
 
+        // Fall on unknown symbols
+        if (arg_count <= text_instruction->operation.num_of_args) {
+            fprintf(stderr, "Unknown token %c while parsing line %u: %s", line_buf[symb_count], text_instruction->address, &line_buf[0]);
+            abort();
+        }
 
         // Fall on to many args
         if(arg_count >= text_instruction->operation.num_of_args && !is_ignorable_symbol(line_buf[symb_count]) && !is_parse_stoping_symbol(line_buf[symb_count])){
-            printf("%s\n",&line_buf[symb_count]);
             fprintf(stderr, "To many args. For operation %s\n", text_instruction->operation.operation_name);
             abort();
         }
@@ -381,7 +389,7 @@ static void parse_line(char* line_buf, LabelTable* label_table, TextInstructionA
         }
         if(isalpha(line_buf[symb_count])){
             text_instruction->address = *address;
-            *address += 4;
+            *address += 16;
 
             text_instruction_array->count ++;
 
@@ -435,7 +443,7 @@ static void parse_iteration(FILE *text_asm_file, LabelTable* label_table, TextIn
 void print_text_instruction(TextInstruction* text_instruction){
     printf("%x %s", text_instruction->address, text_instruction->operation.operation_name);
     for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
-        printf(" %s %u", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+        printf(" %s %x", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
     }
     printf("\n");
 }
@@ -467,6 +475,7 @@ void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instr
     text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity, sizeof(TextInstruction));
 
 
+    label_table->count = 0;
     label_table->capacity = LABEL_TABLE_INIT_SIZE;
     label_table->label_list = (Label*)calloc(label_table->capacity, sizeof(Label));
     
@@ -474,6 +483,10 @@ void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instr
     // First iteration
     printf("First pass:\n");
     parse_iteration(file, label_table, text_instruction_array);
+
+    print_parsed_asm(text_instruction_array);
+
+    rewind(file);
 
     // Second iteration
     printf("\nSecond pass:\n");
@@ -487,4 +500,3 @@ void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instr
     
     fclose(file);
 }
-
