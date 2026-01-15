@@ -20,6 +20,7 @@ static void critical_label_error(LabelTable* label_table, const char* msg){
     abort();
 }
 
+/*
 static Label* find_label(LabelTable* label_table, char* label, uint32_t label_length){
     for(uint32_t i = 0; i < label_table->count; i ++){
         
@@ -33,6 +34,28 @@ static Label* find_label(LabelTable* label_table, char* label, uint32_t label_le
         // If label name have large length
         if(label_table->label_list[i].label_size == label_length){
             if(memcmp(label, label_table->label_list[i].label, label_length)){
+                return &label_table->label_list[i];
+            }
+        }
+    }
+    return NULL;
+}
+*/
+static Label* find_label(LabelTable* label_table, char* label, uint32_t label_length){
+    for(uint32_t i = 0; i < label_table->count; i ++){
+        
+        // If label less then LABEL_LENGTH
+        if(label_table->label_list[i].label_size == label_length && label_length <= LABEL_SIZE){
+            if(memcmp(label, label_table->label_list[i].label, label_length) == 0){
+                return &label_table->label_list[i];
+            }
+        }
+
+        // If label name have large length - FIXED: Added length check and proper comparison
+        if(label_table->label_list[i].label_size == label_length && label_length > LABEL_SIZE){
+            char* long_label;
+            memcpy(&long_label, label_table->label_list[i].label, sizeof(void*));
+            if(memcmp(label, long_label, label_length) == 0){  // Compare actual string content
                 return &label_table->label_list[i];
             }
         }
@@ -56,10 +79,19 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
     }
 
     // Reallocate LabelTable if needed
+    /*
+      if(label_table->count == label_table->capacity){
+      label_table = (LabelTable*)realloc(label_table, (label_table->capacity * 1.5) * sizeof(Label));
+      }
+    */
     if(label_table->count == label_table->capacity){
-        label_table = (LabelTable*)realloc(label_table, (label_table->capacity * 1.5) * sizeof(Label));
+        label_table->capacity = (uint32_t)(label_table->capacity * 1.5);
+        Label* new_list = (Label*)realloc(label_table->label_list, label_table->capacity * sizeof(Label));
+        if(!new_list) {
+            critical_label_error(label_table, "Error: Failed to reallocate label table!\n");
+        }
+        label_table->label_list = new_list;
     }
-
 
     current_label = find_label(label_table, &line_buf[symb_count], current_label_size);
 
@@ -71,7 +103,8 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
             if(current_label->address == address)
                 return;
             else{
-                critical_label_error(label_table, "Error: label redefinition!\n");
+                printf("Current label address: %u\n", current_label->address);
+                critical_label_error(label_table, "Error: Label redefinition!\n");
             }
         }
     }
@@ -254,6 +287,7 @@ static ParserState set_num_arg(TextInstruction* text_instruction, char* num_arg,
     return parser_state;
 }
 
+/*
 static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* label_table, char* line_buf, int* symb_count, uint32_t arg_count, ParserState parser_state){
     int arg_length = 0;
 
@@ -274,35 +308,79 @@ static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* l
     // Case when label not in label table
     else{
         // Realloc label list if needed
-        if(label_table->count == label_table->capacity){
-            label_table->capacity *= 1.5;
-            label_table->label_list = (Label*)realloc((void*)label_table->label_list, label_table->capacity * sizeof(Label));
+        
 
-            if(label_table->label_list == NULL){
-                fprintf(stderr, "Error while reallocating text label buffer");
-                abort();
-            }
-
-            // Store label in label table with short strings mechanizm
-            label_table->count ++;
-            label_table->label_list[label_table->count].label_size = arg_length;
-
-            if(label_table->label_list[label_table->count].label_size <= LABEL_SIZE){
-                memcpy(label_table->label_list[label_table->count].label, &line_buf[*symb_count], label_table->label_list[label_table->count].label_size);
-            }
-
-            else{
-                void* label_buf = calloc(label_table->label_list[label_table->count].label_size, sizeof(char));
-                memcpy(label_table->label_list[label_table->count].label, &label_buf, sizeof(void*));
-            }
-
-            label_table->label_list[label_table->count].address = UINT32_MAX;
+        label_table->label_list[label_table->count].address = UINT32_MAX;
         }
     }
 
     // Update parser state variables
     *symb_count += arg_length;
 
+
+    parser_state.arg_seted = true;
+    parser_state.flag_seted = false;
+
+    return parser_state;
+}
+*/
+
+static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* label_table, char* line_buf, int* symb_count, uint32_t arg_count, ParserState parser_state){
+    int arg_length = 0;
+
+    //Measure label length 
+    while(isalpha(line_buf[*symb_count + arg_length]) || line_buf[*symb_count + arg_length] == '_'){
+        arg_length ++;
+    }
+
+    Label* label = find_label(label_table, &line_buf[*symb_count], arg_length);
+
+    // Case when label in label table
+    if(label != NULL){
+        if(label->address != UINT_MAX){
+            text_instruction->imm[arg_count].imm = label->address;
+        }
+    }
+
+    // Case when label not in label table - FIXED reallocation bug
+    else{
+        // Realloc label list if needed
+        if(label_table->count == label_table->capacity){
+            label_table->capacity = (uint32_t)(label_table->capacity * 1.5);
+            Label* new_list = (Label*)realloc(label_table->label_list, label_table->capacity * sizeof(Label));
+            
+            // FIXED: Check new_list, not label_table->label_list
+            if(new_list == NULL){
+                fprintf(stderr, "Error while reallocating text label buffer");
+                abort();
+            }
+            label_table->label_list = new_list;  // Update the pointer
+        }
+
+        // Store label in label table
+        uint32_t index = label_table->count;
+        label_table->count++;
+        label_table->label_list[index].label_size = arg_length;
+
+        if(label_table->label_list[index].label_size <= LABEL_SIZE){
+            memcpy(label_table->label_list[index].label, &line_buf[*symb_count], arg_length);
+            // Null terminate if possible
+            if(arg_length < LABEL_SIZE) {
+                label_table->label_list[index].label[arg_length] = '\0';
+            }
+        }
+        else{
+            char* label_buf = (char*)calloc(arg_length + 1, sizeof(char));
+            memcpy(label_buf, &line_buf[*symb_count], arg_length);
+            label_buf[arg_length] = '\0';
+            memcpy(label_table->label_list[index].label, &label_buf, sizeof(void*));
+        }
+
+        label_table->label_list[index].address = UINT32_MAX;
+    }
+
+    // Update parser state variables
+    *symb_count += arg_length;
 
     parser_state.arg_seted = true;
     parser_state.flag_seted = false;

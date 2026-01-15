@@ -45,7 +45,7 @@ void stack_health_check(Stack* stack){
 //-------------------------------------HMMMMMM....-------------------------------------
 static void stack_poison(Stack* stack) {
     // Calculate unused space after elements (excluding header and footer)
-    size_t data_end = 8 + stack->elem_size * stack->count;
+    size_t data_end = 8 + stack->elem_size * (stack->count);
     size_t poison_size = stack->capacity - data_end - 8;
     memset((char*)stack->buffer + data_end, 0x00, poison_size);
 }
@@ -229,9 +229,9 @@ void stack_modify_element(Stack* stack, void* elem, size_t position){
     stack_health_check(stack);
 
     // Reallocate stack buffer, if needed
-    if(position > stack->capacity){
-        stack->capacity = position * 1.5;
-        stack_realloc(stack, position * 1.5);
+    if(position >= (stack->capacity - 16) * stack->elem_size){
+        stack->capacity = (position * stack->elem_size) * 1.5;
+        stack_realloc(stack, stack->capacity);
     }
 
     // Modify element
@@ -239,11 +239,12 @@ void stack_modify_element(Stack* stack, void* elem, size_t position){
     memcpy((void*)dest_addr, elem, stack->elem_size);
 
     // Change end of stack if needed
-    if(stack->count < position){
-        stack->count = 8 + position * stack->elem_size;
+    if(stack->count <= position){
+        stack->count = position + 1;
     }
 
     // Hash stack
+    stack_poison(stack);
     stack_hash(stack);
 
 }

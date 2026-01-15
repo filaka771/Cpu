@@ -1,22 +1,32 @@
 :start
-inp x15
-mov x0 1
+inp xe
+
+mov x0 0
 mov x1 1
-mov x3 0
 
-:fib_cycle_start
-bne x15 x3 :fib_cycle
-beq x15 x3 :out
+mov x2 1
 
-:fib_cycle
-mov x2 x0
-mov x0 x1
-add x2 x2 x0
-mov x1 x2
-add x3 x3 1
-baw :fib_cycle_start
+beq xe 0 :out_zero
+beq xe 1 :out_one
+
+:cycle
+str x1
+add x1 x1 x0
+ldr x0
+
+add x2 x2 1
+
+beq xe x2 :out
+baw :cycle
 
 :out
 out x1
+hlt
 
+:out_zero
+out 0
+hlt
 
+:out_one
+out 1
+hlt
