@@ -6,6 +6,9 @@ mov x1 1
 
 mov x2 1
 
+; Handling case when with first and
+; second fib numbers
+
 beq xe 0 :out_zero
 beq xe 1 :out_one
 
@@ -16,7 +19,7 @@ ldr x0
 
 add x2 x2 1
 
-beq xe x2 :out
+beq xe x2 :out ;if required counter doesn't achived - continue
 baw :cycle
 
 :out
