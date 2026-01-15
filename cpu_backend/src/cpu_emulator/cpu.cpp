@@ -10,6 +10,7 @@
 #include "errors/errors.h"
 
 
+//-------------------------DEBUG-------------------------
 static void cpu_state(Cpu* cpu){
     printf("Registers values:\n");
     for(int i = 0; i < NUM_OF_REGISTERS - 3; i ++){
@@ -24,13 +25,13 @@ static void cpu_state(Cpu* cpu){
     stack_dump(cpu->data_stack);
 }
 
-//--------------------------------------------------------------------------------------------------------
+//-------------------------CPU-------------------------
 static void load_program_data(Cpu* cpu, const char* file_name) {
     FILE* file = fopen(file_name, "rb");
     if (!file) {
-        perror("Failed to open file");
-        cpu->running = false;
-        return;
+        fprintf(stderr, "Failed to open file!");
+        cpu_deinitialize(cpu);
+        abort();
     }
     
     // Get file size
@@ -43,17 +44,17 @@ static void load_program_data(Cpu* cpu, const char* file_name) {
     if (file_size > max_program_size) {
         fprintf(stderr, "Error: File '%s' is too large (%ld bytes > %zu bytes max)\n",
                 file_name, file_size, max_program_size);
-        fprintf(stderr, "Execution aborted: program exceeds maximum size\n");
+        fprintf(stderr, "Execution aborted: program exceeds maximum size!\n");
         fclose(file);
-        cpu->running = false;
-        return;
+        cpu_deinitialize(cpu);
+        abort();
     }
     
     if (file_size == 0) {
-        fprintf(stderr, "Error: File '%s' is empty\n", file_name);
+        fprintf(stderr, "Error: File '%s' is empty!\n", file_name);
         fclose(file);
-        cpu->running = false;
-        return;
+        cpu_deinitialize(cpu);
+        abort();
     }
     
     // Read directly into CPU buffer
@@ -61,13 +62,13 @@ static void load_program_data(Cpu* cpu, const char* file_name) {
     
     if (bytes_read != file_size) {
         if (feof(file)) {
-            fprintf(stderr, "Error: Unexpected end of file\n");
+            fprintf(stderr, "Error: Unexpected end of file!\n");
         } else if (ferror(file)) {
-            perror("Error reading file");
+            perror("Error reading file!");
         }
         fclose(file);
-        cpu->running = false;
-        return;
+        cpu_deinitialize(cpu);
+        abort();
     }
     
     fclose(file);
@@ -98,7 +99,7 @@ static void cpu_init(Cpu* cpu, Stack* data_stack, Stack* call_stack, const char*
 void instruction_execute(Cpu* cpu){
     uint32_t op_code = *(uint32_t*)(cpu->program_buffer + cpu->regs[RPC]);
     op_code = (op_code >> 24) & 0xFF;
-    printf("Instruction: %s\n\n", instruction_set[op_code].op_name);
+    //printf("Instruction: %s\n\n", instruction_set[op_code].op_name);
 
     instruction_set[op_code].cpu_instruction_pointer(cpu);
 }
@@ -116,6 +117,7 @@ int main(int argc,char* argv[]){
     // Check number of args and set bin_file_name
     if(argc != 2){
         fprintf(stderr, "Wrong number of args!\n");
+        //cpu_deinitialize(cpu);
         abort();
     }
 

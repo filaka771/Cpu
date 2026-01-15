@@ -379,7 +379,8 @@ static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstr
 
         // Fall on unknown symbols
         if (arg_count <= text_instruction->operation.num_of_args) {
-            fprintf(stderr, "Unknown token %c while parsing line %u: %s", line_buf[symb_count], text_instruction->address, &line_buf[0]);
+            fprintf(stderr, "Unknown token %c while parsing line: %s", 
+                    line_buf[symb_count], &line_buf[0]);
             abort();
         }
 
@@ -401,7 +402,7 @@ static void parse_line(char* line_buf, LabelTable* label_table, TextInstructionA
             break;
         }
         if(isalpha(line_buf[symb_count])){
-            text_instruction->address = *address;
+            //text_instruction->address = *address;
             *address += 16;
 
             text_instruction_array->count ++;
@@ -451,10 +452,10 @@ static void parse_iteration(FILE *text_asm_file, LabelTable* label_table, TextIn
     free(line_buf);
 }
 
-//___________________TESTTTTTTTTTTTTTTTTT_________________________
+//___________________DEBUG_________________________
 
 void print_text_instruction(TextInstruction* text_instruction){
-    printf("%x %s", text_instruction->address, text_instruction->operation.operation_name);
+    printf("%s", text_instruction->operation.operation_name);
     for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
         printf(" %s %x", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
     }
@@ -474,7 +475,8 @@ void print_label_table(LabelTable* label_table){
     }
 }
 
-//___________________TESTTTTTTTTTTTTTTTTT_________________________
+//___________________DEBUG_________________________
+
 void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instruction_array, LabelTable* label_table){
     FILE *file = fopen(file_name, "r");
     if (!file) {

@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
+
 void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count) {
     int byte_position = 16 - (arg_count * 8);
 
@@ -23,7 +24,6 @@ void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count
         }
     }
 }
-
 
 void assemble_text_instruction(BinInstruction* bin_instruction, TextInstruction* text_instruction){
     bin_instruction->operation = 0;

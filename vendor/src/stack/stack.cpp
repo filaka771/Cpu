@@ -18,6 +18,25 @@
 #define HASH_SIZE SHA256_DIGEST_LENGTH
 #define ELEM_TYPE char
 
+//-------------------------------------DEBUG-------------------------------------
+void stack_dump(Stack* stack) {
+    printf("\nSTACK DUMP: \n");
+
+    printf("Stack buffer: \n");
+    for(size_t i = 0; i < stack->capacity; i++) {
+        printf("%02x", ((unsigned char*)stack->buffer)[i]);
+    }
+    printf("\nHash: ");
+    for(size_t i = 0; i < HASH_SIZE; i++) {
+        printf("%02x", stack->hash[i]);
+    }
+    printf("\nBuffer size: %zu\nElement size: %zu\nNumber of elements: %zu\n", 
+           stack->capacity, stack->elem_size, stack->count);
+    printf("\nLeft canary: %p\n", stack->buffer);
+    //printf("Left part of buffer: %p\n", *(void**)stack->buffer);
+    printf("Right canary: %p\n", (char*)stack->buffer + stack->capacity);
+}
+
 //-------------------------------------Stack_health_check-------------------------------------
 
 static int stack_hashes_compare(const unsigned char* hash_1, const unsigned char* hash_2){
@@ -42,7 +61,7 @@ void stack_health_check(Stack* stack){
     return;
 }
 
-//-------------------------------------HMMMMMM....-------------------------------------
+//-------------------------------------Aditional_functions-------------------------------------
 static void stack_poison(Stack* stack) {
     // Calculate unused space after elements (excluding header and footer)
     size_t data_end = 8 + stack->elem_size * (stack->count);
@@ -69,7 +88,8 @@ static void stack_realloc(Stack* stack, size_t new_size) {
     stack_canary_set(stack);
 
 }
-//-------------------------------------Stack-------------------------------------
+
+//-------------------------------------Stack_init-------------------------------------
 
 void stack_init(Stack* stack, size_t el_num, size_t el_size) {
     // Check initial parameters
@@ -157,28 +177,13 @@ void stack_init_from_file(Stack* stack, size_t el_size, const char* file_name) {
     stack_hash(stack);
 }
 
-void stack_dump(Stack* stack) {
-    printf("\nSTACK DUMP: \n");
 
-    printf("Stack buffer: \n");
-    for(size_t i = 0; i < stack->capacity; i++) {
-        printf("%02x", ((unsigned char*)stack->buffer)[i]);
-    }
-    printf("\nHash: ");
-    for(size_t i = 0; i < HASH_SIZE; i++) {
-        printf("%02x", stack->hash[i]);
-    }
-    printf("\nBuffer size: %zu\nElement size: %zu\nNumber of elements: %zu\n", 
-           stack->capacity, stack->elem_size, stack->count);
-    printf("\nLeft canary: %p\n", stack->buffer);
-    printf("Left part of buffer: %p\n", *(void**)stack->buffer);
-    printf("Right canary: %p\n", (char*)stack->buffer + stack->capacity);
-}
-
+//-------------------------------------Stack_operations-------------------------------------
 void stack_free(Stack* stack) {
     stack_health_check(stack);
     free(stack->buffer);
 }
+
 
 void stack_copy(Stack* new_stack, Stack* old_stack){
     stack_health_check(old_stack);

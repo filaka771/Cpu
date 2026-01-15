@@ -16,6 +16,9 @@ typedef struct CpuInstructionArgs{
     CpuInstructionArg cpu_imm_args[3];
 } CpuInstructionArgs;
 
+
+void cpu_deinitialize(Cpu* cpu);
+
 void inp(Cpu* cpu);
 
 void out(Cpu* cpu);

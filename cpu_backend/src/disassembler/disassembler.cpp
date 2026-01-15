@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-//Debug
+//--------------------------Debug--------------------------
 void print_bin_instruction(BinInstructionArray* bin_instructions_array){
     printf("Bin representation:\n");
     for(int count = 0; count < bin_instructions_array->count; count ++){
@@ -12,6 +12,24 @@ void print_bin_instruction(BinInstructionArray* bin_instructions_array){
         printf("%b %b %b %b\n", bin_instruction->operation, bin_instruction->arg_list[0], bin_instruction->arg_list[1], bin_instruction->arg_list[2]);
     }
 }
+
+//--------------------------Debug--------------------------
+
+// TODO: Make aliпed print
+void print_text_instruction(TextInstruction* text_instruction){
+    printf("%x %s    ", text_instruction->address, text_instruction->operation.operation_name);
+    for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
+        printf("%s%x    ", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+    }
+    printf("\n");
+}
+
+void print_parsed_asm(TextInstructionArray* text_instruction_array){
+    for(uint32_t i = 0; i < text_instruction_array->count; i++){
+        print_text_instruction(&text_instruction_array->text_instruction_list[i]);
+    }
+}
+
 
 void read_bin_file(BinInstructionArray* bin_instructions_array, const char* bin_file_name){
     FILE* bin_file = fopen(bin_file_name, "rb");
@@ -95,7 +113,7 @@ void instruction_disassemble(BinInstruction* bin_instruction, TextInstruction* t
 }
 void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstructionArray* text_instruction_array){
     text_instruction_array->count = 0;
-    text_instruction_array->capacity = bin_instruction_array->count;  // Remove the +1
+    text_instruction_array->capacity = bin_instruction_array->count;
 
     text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity, sizeof(TextInstruction));
 
@@ -111,38 +129,6 @@ void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstru
                                 &text_instruction_array->text_instruction_list[text_instruction_array->count]);
 
         text_instruction_array->count++;
-    }
-}
-/*
-  void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstructionArray* text_instruction_array){
-  text_instruction_array->count = 0;
-  text_instruction_array->capacity = bin_instruction_array->count + 1;
-
-    text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity, sizeof(TextInstruction));
-
-    
-    while(text_instruction_array->count < text_instruction_array->capacity){
-    text_instruction_array->text_instruction_list->address = text_instruction_array->count * sizeof(BinInstruction);
-    instruction_disassemble(&bin_instruction_array->bin_instruction_list[text_instruction_array->count], &text_instruction_array->text_instruction_list[text_instruction_array->count]);
-
-        text_instruction_array->count ++;
-        }
-        }
- */
-
-//-----------------------------------------------------------
-
-void print_text_instruction(TextInstruction* text_instruction){
-    printf("%x %s", text_instruction->address, text_instruction->operation.operation_name);
-    for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
-        printf(" %s %x", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
-    }
-    printf("\n");
-}
-
-void print_parsed_asm(TextInstructionArray* text_instruction_array){
-    for(uint32_t i = 0; i < text_instruction_array->count; i++){
-        print_text_instruction(&text_instruction_array->text_instruction_list[i]);
     }
 }
 

@@ -42,7 +42,6 @@ typedef struct TextInstructionOp{
 }TextInstructionOp;
 
 typedef struct TextInstruction{
-    int32_t address;
     TextInstructionOp operation;
     TextInstructionArg imm [3];
 }TextInstruction;
