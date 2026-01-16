@@ -14,19 +14,26 @@ void print_bin_instruction(BinInstructionArray* bin_instructions_array){
 }
 
 //--------------------------Debug--------------------------
-
-// TODO: Make aliпed print
-void print_text_instruction(TextInstruction* text_instruction){
-    printf("%x %s    ", text_instruction->address, text_instruction->operation.operation_name);
-    for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
-        printf("%s%x    ", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+void print_text_instruction(TextInstruction* text_instruction, uint32_t address){
+    // Fixed widths that work for most cases
+    // Address: 8 hex digits + space
+    // Operation: 10 chars + 2 spaces
+    printf("%08x  %-10s  ", address, text_instruction->operation.operation_name);
+    
+    for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j++){
+        // Print flag (if any) and hex with consistent width
+        if(strlen(text_instruction->imm[j].imm_flag) > 0){
+            printf("%s%08x  ", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+        } else {
+            printf(" %08x  ", text_instruction->imm[j].imm); // pad for missing flag
+        }
     }
     printf("\n");
 }
 
 void print_parsed_asm(TextInstructionArray* text_instruction_array){
     for(uint32_t i = 0; i < text_instruction_array->count; i++){
-        print_text_instruction(&text_instruction_array->text_instruction_list[i]);
+        print_text_instruction(&text_instruction_array->text_instruction_list[i], i * BIN_INSTRUCTION_SIZE);
     }
 }
 
@@ -124,7 +131,6 @@ void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstru
 
     // Use the actual number of bin instructions as the limit
     while(text_instruction_array->count < bin_instruction_array->count){
-        text_instruction_array->text_instruction_list[text_instruction_array->count].address = text_instruction_array->count * sizeof(BinInstruction);
         instruction_disassemble(&bin_instruction_array->bin_instruction_list[text_instruction_array->count], 
                                 &text_instruction_array->text_instruction_list[text_instruction_array->count]);
 
