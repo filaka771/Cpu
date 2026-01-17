@@ -1,5 +1,0 @@
-[submodule "cpu/stack"]
-	path = cpu_emulator/stack
-	url = git@github.com:filaka771/Stack.git
-[submodule "src/common"]
-	path = src/common
