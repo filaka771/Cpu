@@ -1,0 +1,18 @@
+:start
+inp xe
+
+mov x0 0
+mov x1 1
+
+:loop
+bne xe x0 :continue
+beq xe x0 :out
+
+:continue
+add x0 x0 1
+mul x1 x1 x0
+baw :loop
+
+:out
+out x1
+hlt

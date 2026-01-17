@@ -1,0 +1,21 @@
+inp xe
+
+mov x0 0
+mov x1 1
+
+cfn :factorial_iteration
+out x1
+hlt
+
+:factorial_iteration
+bne xe x0 :func_body
+ret
+
+:func_body
+add x0 x0 1
+mul x1 x1 x0
+cfn :factorial_iteration
+ret
+
+
+
