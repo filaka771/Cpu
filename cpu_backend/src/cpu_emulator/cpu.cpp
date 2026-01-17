@@ -5,9 +5,7 @@
 #include "cpu_emulator/cpu.h"
 #include "cpu_emulator/cpu_instructions.h"
 #include "instructions/instructions.h"
-#include "exceptions/exceptions.h"
 #include "stack/stack.h"
-#include "errors/errors.h"
 
 
 //-------------------------DEBUG-------------------------
@@ -29,14 +27,12 @@ static void cpu_state(Cpu* cpu){
 static void load_program_data(Cpu* cpu, const char* file_name) {
     FILE* file = fopen(file_name, "rb");
     if (!file) {
-        fprintf(stderr, "Failed to open file!");
-        cpu_deinitialize(cpu);
-        abort();
+        cpu_critical_error(cpu, "Failed to open bin file!");
     }
     
     // Get file size
     fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
+    size_t file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
     
     const size_t max_program_size = 16 * 65536;
@@ -44,17 +40,14 @@ static void load_program_data(Cpu* cpu, const char* file_name) {
     if (file_size > max_program_size) {
         fprintf(stderr, "Error: File '%s' is too large (%ld bytes > %zu bytes max)\n",
                 file_name, file_size, max_program_size);
-        fprintf(stderr, "Execution aborted: program exceeds maximum size!\n");
         fclose(file);
-        cpu_deinitialize(cpu);
-        abort();
+        cpu_critical_error(cpu, "Execution aborted: program exceeds maximum size!\n");
     }
     
     if (file_size == 0) {
         fprintf(stderr, "Error: File '%s' is empty!\n", file_name);
         fclose(file);
-        cpu_deinitialize(cpu);
-        abort();
+        cpu_critical_error(cpu, "\0");
     }
     
     // Read directly into CPU buffer
@@ -67,8 +60,7 @@ static void load_program_data(Cpu* cpu, const char* file_name) {
             perror("Error reading file!");
         }
         fclose(file);
-        cpu_deinitialize(cpu);
-        abort();
+        cpu_critical_error(cpu, "\0");
     }
     
     fclose(file);
@@ -96,19 +88,23 @@ static void cpu_init(Cpu* cpu, Stack* data_stack, Stack* call_stack, const char*
 }
 
 
-void instruction_execute(Cpu* cpu){
+static void instruction_execute(Cpu* cpu){
     uint32_t op_code = *(uint32_t*)(cpu->program_buffer + cpu->regs[RPC]);
     op_code = (op_code >> 24) & 0xFF;
-    //printf("Instruction: %s\n\n", instruction_set[op_code].op_name);
+    if(DEBUG)
+        printf("Instruction: %s\n\n", instruction_set[op_code].op_name);
 
     instruction_set[op_code].cpu_instruction_pointer(cpu);
 }
 
 
-void cpu_execute(Cpu* cpu) {
+static void cpu_execute(Cpu* cpu) {
     while(cpu->running) {
         instruction_execute(cpu);
-        cpu_state(cpu);
+
+        if(DEBUG)
+            cpu_state(cpu);
+
         cpu->regs[RCC] ++;
     }
 }
@@ -117,7 +113,6 @@ int main(int argc,char* argv[]){
     // Check number of args and set bin_file_name
     if(argc != 2){
         fprintf(stderr, "Wrong number of args!\n");
-        //cpu_deinitialize(cpu);
         abort();
     }
 
@@ -138,12 +133,8 @@ int main(int argc,char* argv[]){
 
     cpu_execute(cpu);
 
-    //stack_dump(cpu->stack);
+    free(cpu->program_buffer);
     stack_free(cpu->data_stack);
     stack_free(cpu->call_stack);
     return 0;
 }
-
-
-
-    

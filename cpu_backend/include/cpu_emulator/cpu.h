@@ -17,7 +17,7 @@
 //#define DATA_STACK_INIT_SIZE 65536
 #define DATA_STACK_INIT_SIZE 499
 
-#define DEBUG 1
+#define DEBUG 0
 
 typedef struct Cpu{
     // reg0, ... reg15 - general purpose registers

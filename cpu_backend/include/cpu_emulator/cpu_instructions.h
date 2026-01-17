@@ -17,7 +17,7 @@ typedef struct CpuInstructionArgs{
 } CpuInstructionArgs;
 
 
-void cpu_deinitialize(Cpu* cpu);
+void cpu_critical_error(Cpu* cpu, const char* error_message);
 
 void inp(Cpu* cpu);
 

@@ -4,17 +4,20 @@
 #include <stdio.h>
 #include <string.h>
 
-//--------------------------Debug--------------------------
-void print_bin_instruction(BinInstructionArray* bin_instructions_array){
+//---------------------------------------DEBUG---------------------------------------
+
+static void print_bin_instruction(BinInstructionArray* bin_instructions_array){
     printf("Bin representation:\n");
-    for(int count = 0; count < bin_instructions_array->count; count ++){
+    for(uint32_t count = 0; count < bin_instructions_array->count; count ++){
         BinInstruction* bin_instruction = &bin_instructions_array->bin_instruction_list[count];
-        printf("%b %b %b %b\n", bin_instruction->operation, bin_instruction->arg_list[0], bin_instruction->arg_list[1], bin_instruction->arg_list[2]);
+        printf("%b %b %b %b\n", bin_instruction->operation, bin_instruction->arg_list[0],
+               bin_instruction->arg_list[1], bin_instruction->arg_list[2]);
     }
 }
 
-//--------------------------Debug--------------------------
-void print_text_instruction(TextInstruction* text_instruction, uint32_t address){
+//--------------------------PRINT_DISASSEMBLED_INSTRUCTIONS--------------------------
+
+static void print_text_instruction(TextInstruction* text_instruction, uint32_t address){
     // Fixed widths that work for most cases
     // Address: 8 hex digits + space
     // Operation: 10 chars + 2 spaces
@@ -31,14 +34,16 @@ void print_text_instruction(TextInstruction* text_instruction, uint32_t address)
     printf("\n");
 }
 
-void print_parsed_asm(TextInstructionArray* text_instruction_array){
+static void print_parsed_asm(TextInstructionArray* text_instruction_array){
     for(uint32_t i = 0; i < text_instruction_array->count; i++){
-        print_text_instruction(&text_instruction_array->text_instruction_list[i], i * BIN_INSTRUCTION_SIZE);
+        print_text_instruction(&text_instruction_array->text_instruction_list[i],
+                               i * BIN_INSTRUCTION_SIZE);
     }
 }
 
+//------------------------------------DISASSEMBLER-----------------------------------
 
-void read_bin_file(BinInstructionArray* bin_instructions_array, const char* bin_file_name){
+static void read_bin_file(BinInstructionArray* bin_instructions_array, const char* bin_file_name){
     FILE* bin_file = fopen(bin_file_name, "rb");
 
     if(!bin_file){
@@ -61,9 +66,11 @@ void read_bin_file(BinInstructionArray* bin_instructions_array, const char* bin_
     }
 
     // Read bin file
-    size_t readed = fread(bin_instructions_array->bin_instruction_list, sizeof(BinInstruction), bin_instructions_array->count, bin_file);
+    size_t readed = fread(bin_instructions_array->bin_instruction_list, sizeof(BinInstruction),
+                          bin_instructions_array->count, bin_file);
 
-    print_bin_instruction(bin_instructions_array);
+    if(DEBUG)
+        print_bin_instruction(bin_instructions_array);
 
     if(readed != bin_instructions_array->count){
         fprintf(stderr, "Error: Something went wrong while reading bin file");
@@ -72,7 +79,7 @@ void read_bin_file(BinInstructionArray* bin_instructions_array, const char* bin_
     }
 }
 
-void flag_disassemble(BinInstruction* bin_instruction, TextInstruction* text_instruction, int arg_count){
+static void flag_disassemble(BinInstruction* bin_instruction, TextInstruction* text_instruction, int arg_count){
     uint32_t current_operation = bin_instruction->operation;
 
     // Read all setted flags
@@ -97,7 +104,7 @@ void flag_disassemble(BinInstruction* bin_instruction, TextInstruction* text_ins
     }
 }
 
-void instruction_disassemble(BinInstruction* bin_instruction, TextInstruction* text_instruction){
+static void instruction_disassemble(BinInstruction* bin_instruction, TextInstruction* text_instruction){
     // Instruction name disassemble
     uint32_t instruction_code = (bin_instruction->operation >> 24) & 0xFF;
 
@@ -111,14 +118,15 @@ void instruction_disassemble(BinInstruction* bin_instruction, TextInstruction* t
     }
 
     // Instruction imms disassemble
-    for(int imm_count = 0; imm_count < text_instruction->operation.num_of_args; imm_count ++){
+    for(uint32_t imm_count = 0; imm_count < text_instruction->operation.num_of_args; imm_count ++){
         flag_disassemble(bin_instruction, text_instruction, imm_count);
         
         // Imm value disassembling
         text_instruction->imm[imm_count].imm = bin_instruction->arg_list[imm_count];
     }
 }
-void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstructionArray* text_instruction_array){
+
+static void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstructionArray* text_instruction_array){
     text_instruction_array->count = 0;
     text_instruction_array->capacity = bin_instruction_array->count;
 
@@ -138,7 +146,7 @@ void bin_file_disassemble(BinInstructionArray* bin_instruction_array, TextInstru
     }
 }
 
-//-----------------------------------------------------------
+//---------------------------------------MAIN----------------------------------------
 
 int main(int argc, char* argv[]){
     const char* bin_asm_file_name;

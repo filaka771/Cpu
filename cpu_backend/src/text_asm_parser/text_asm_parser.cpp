@@ -8,17 +8,83 @@
 
 #include "text_asm_parser/text_asm_parser.h"
 #include "instructions/instructions.h"
+#include "exceptions/exceptions.h"
+#include "errors/errors.h"
 
 // LABEL_SIZE must be bigger then 8, to be possible save ptr on allocated buffer
 
-//----------------------------------------------------------
-static void critical_label_error(LabelTable* label_table, const char* msg){
-    if(label_table && label_table->label_list){
-        free(label_table->label_list);
+//----------------------------------DEBUG----------------------------------
+
+void print_flags(uint32_t arg_count, TextInstruction* text_instruction){
+    printf("Parsed flags: %u\n", arg_count);
+    for(uint32_t i = 0; i <= arg_count; i ++){
+        printf("flag %u: %s ", i, text_instruction->imm[i].imm_flag);
     }
-    fprintf(stderr,"\n%s" ,msg);
-    abort();
+    printf("\n");
 }
+
+void print_args(uint32_t arg_count, TextInstruction* text_instruction){
+    printf("Parsed args: %u\n", arg_count);
+    for(uint32_t i = 0; i <= arg_count; i ++){
+        printf("arg %u: %u ", i, text_instruction->imm[i].imm);
+    }
+    printf("\n");
+}
+
+void print_text_instruction(TextInstruction* text_instruction){
+    printf("%s", text_instruction->operation.operation_name);
+    for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
+        printf(" %s %x", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+    }
+    printf("\n");
+}
+
+void print_parsed_asm(TextInstructionArray* text_instruction_array){
+    for(uint32_t i = 0; i < text_instruction_array->count; i++){
+        print_text_instruction(&text_instruction_array->text_instruction_list[i]);
+    }
+}
+
+void print_label_table(LabelTable* label_table){
+    printf("Label List:\n");
+    for (uint32_t i = 0; i < label_table->count; i ++){
+        printf("%u   %s\n", label_table->label_list[i].address, label_table->label_list[i].label);
+    }
+}
+
+//----------------------------TOKEN_RECOGNITION-----------------------------
+
+static bool is_flag_symbol(char flag){
+    for(int j = 0; j < INSTRUCTIONS_FLAGS_NUMBER; j ++){
+        if (flag == instruction_flag[j]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool is_hex_digit(char digit) {
+    return isdigit(digit) || 
+           ('a' <= tolower(digit) && tolower(digit) <= 'f');
+}
+
+static bool is_ignorable_symbol(char symbol){
+    for(int i = 0; i < IGNORABLE_SYMBOLS_NUMBER; i ++){
+        if(symbol == ignorable_symbols[i])
+            return true;
+    }
+    return false;
+}
+
+static bool is_parse_stoping_symbol(char symbol){
+    for(int i = 0; i < PARSE_STOPING_SYMB_NUMBER; i ++){
+        if(symbol == parse_stoping_symbols[i])
+            return true;
+    }
+    return false;
+}
+
+//----------------------------LABEL_TABLE-----------------------------
 
 static Label* find_label(LabelTable* label_table, char* label, uint32_t label_length){
     for(uint32_t i = 0; i < label_table->count; i ++){
@@ -54,14 +120,14 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
 
     // Zero length label name case
     if(current_label_size == 0){
-        critical_label_error(label_table, "Error: Label name must contain one or more symbol! Also shouldn't be spaces after :!\n");
+        THROW(ZERO_LENGTH_LABEL, "Error: Label name must contain one or more symbol! Also shouldn't be spaces after :!\n");
     }
 
     if(label_table->count == label_table->capacity){
         label_table->capacity = (uint32_t)(label_table->capacity * 1.5);
         Label* new_list = (Label*)realloc(label_table->label_list, label_table->capacity * sizeof(Label));
         if(!new_list) {
-            critical_label_error(label_table, "Error: Failed to reallocate label table!\n");
+            THROW(LABEL_TABLE_REALLOC_FAILUR, "Error: Failed to reallocate label table!\n");
         }
         label_table->label_list = new_list;
     }
@@ -77,7 +143,7 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
                 return;
             else{
                 printf("Current label address: %u\n", current_label->address);
-                critical_label_error(label_table, "Error: Label redefinition!\n");
+                THROW(LABEL_REDEFINITION, "Error: Label redefinition!\n");
             }
         }
     }
@@ -93,7 +159,8 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
         // If label size is smaller then allocated buffer
         if(current_label->label_size <= LABEL_SIZE){
             memcpy(current_label->label, &line_buf[symb_count], current_label->label_size);
-            printf("Saved label name: %s address: %u\n", current_label->label, current_label->address);
+            if(DEBUG)
+                printf("Saved label name: %s address: %u\n", current_label->label, current_label->address);
         }
 
         // If label size is bigger then allocated buffer
@@ -114,15 +181,32 @@ static void parse_label(char* line_buf, LabelTable* label_table, uint32_t addres
         }
     
         // Non-space symbol after label name
-        critical_label_error(label_table, "Error: non-space symbol after label name!\nLabel name can contain only latters and '_' symbol!\n");
+        THROW(WRONG_LABEL_NAME,
+              "Error: non-space symbol after label name!\nLabel name can contain only latters and '_' symbol!\n");
     }
 }
 
+/*
+  void free_label_table(LabelTable* label_table){
+  // Deallocation of long strings
+     for(uint32_t i = 0; i < label_table->count; i ++){
+     if(label_table->label_list[i].label_size > LABEL_SIZE){
+     free(label_table->label_list[i].label);
+     }
+     }
+
+    // Labels buffer deallocation
+       free(label_table->label_list);
+       }
+ */
 void free_label_table(LabelTable* label_table){
     // Deallocation of long strings
     for(uint32_t i = 0; i < label_table->count; i ++){
         if(label_table->label_list[i].label_size > LABEL_SIZE){
-            free(label_table->label_list[i].label);
+            // Extract the pointer stored in the label array
+            char* long_label_ptr;
+            memcpy(&long_label_ptr, label_table->label_list[i].label, sizeof(void*));
+            free(long_label_ptr);
         }
     }
 
@@ -131,7 +215,7 @@ void free_label_table(LabelTable* label_table){
 }
 
 
-//----------------------------------------------------------
+//-------------------------INSTRUCTINS_PARSING--------------------------
 static void set_op_name(TextInstruction* text_instruction, char* op_name, int* symb_count){
     int op_name_length = 0;
     while(isalpha(*(op_name + op_name_length))){
@@ -151,64 +235,16 @@ static void set_op_name(TextInstruction* text_instruction, char* op_name, int* s
         }
     }
 
-    fprintf(stderr, "Wrong instruction name!\n");
-    abort();
+    THROW(WRONG_INSTRUCTION_NAME, "Wrong instruction name!\n");
 }
 
-//--------------------------------FOR_DEBUG--------------------
-void print_flags(uint32_t arg_count, TextInstruction* text_instruction){
-    printf("Parsed flags: %u\n", arg_count);
-    for(uint32_t i = 0; i <= arg_count; i ++){
-        printf("flag %u: %s ", i, text_instruction->imm[i].imm_flag);
-    }
-    printf("\n");
-}
 
-void print_args(uint32_t arg_count, TextInstruction* text_instruction){
-    printf("Parsed args: %u\n", arg_count);
-    for(uint32_t i = 0; i <= arg_count; i ++){
-        printf("arg %u: %u ", i, text_instruction->imm[i].imm);
-    }
-    printf("\n");
-}
-
-//--------------------------------FOR_DEBUG--------------------
-static bool is_flag_symbol(char flag){
-    for(int j = 0; j < INSTRUCTIONS_FLAGS_NUMBER; j ++){
-        if (flag == instruction_flag[j]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool is_hex_digit(char digit) {
-    return isdigit(digit) || 
-        ('a' <= tolower(digit) && tolower(digit) <= 'f');
-}
-
-static bool is_ignorable_symbol(char symbol){
-    for(int i = 0; i < IGNORABLE_SYMBOLS_NUMBER; i ++){
-        if(symbol == ignorable_symbols[i])
-            return true;
-    }
-    return false;
-}
-
-static bool is_parse_stoping_symbol(char symbol){
-    for(int i = 0; i < PARSE_STOPING_SYMB_NUMBER; i ++){
-        if(symbol == parse_stoping_symbols[i])
-            return true;
-    }
-    return false;
-}
-
-static ParserState set_arg_flag (TextInstruction* text_instruction, char* arg_flag, uint32_t* arg_count, int* symb_count, ParserState parser_state){
+static ParserState set_arg_flag (TextInstruction* text_instruction, char* arg_flag,
+                                 uint32_t* arg_count, int* symb_count, ParserState parser_state){
 
     // Check that there no two flags in a row
     if(parser_state.flag_seted){
-        fprintf(stderr, "Error: Flag cannot contain spaces!");
-        abort();
+        THROW(SPACES_IN_FLAG, "Error: Flag cannot contain spaces!");
     }
 
     int arg_length = 0;
@@ -220,7 +256,7 @@ static ParserState set_arg_flag (TextInstruction* text_instruction, char* arg_fl
         }
         else{
             fprintf(stderr, "Unknown flag %c!\n", *(arg_flag + arg_length));
-            abort();
+            THROW(UNKNOWN_FLAG,"\0");
         }
     }
 
@@ -238,7 +274,8 @@ static ParserState set_arg_flag (TextInstruction* text_instruction, char* arg_fl
 }
 
 
-static ParserState set_num_arg(TextInstruction* text_instruction, char* num_arg, uint32_t arg_count, int* symb_count, ParserState parser_state){
+static ParserState set_num_arg(TextInstruction* text_instruction, char* num_arg, uint32_t arg_count, int* symb_count,
+                               ParserState parser_state){
     // Parse case without flag
     if(!parser_state.flag_seted){
         strcpy(text_instruction->imm[arg_count].imm_flag,"  ");
@@ -248,8 +285,7 @@ static ParserState set_num_arg(TextInstruction* text_instruction, char* num_arg,
     char* end_of_arg = NULL;
     long long arg = strtoll(num_arg, &end_of_arg, 16);
     if(arg > UINT_MAX){
-        perror("To large arg. Arg must me less then UINT_MAX!");
-        abort();
+        THROW(TO_LARGE_IMM, "To large imm. Imm must me less then UINT_MAX!");
     }
 
     text_instruction->imm[arg_count].imm = (uint32_t)arg;
@@ -261,7 +297,8 @@ static ParserState set_num_arg(TextInstruction* text_instruction, char* num_arg,
 }
 
 
-static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* label_table, char* line_buf, int* symb_count, uint32_t arg_count, ParserState parser_state){
+static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* label_table,
+                                 char* line_buf, int* symb_count, uint32_t arg_count, ParserState parser_state){
     int arg_length = 0;
 
     //Measure label length 
@@ -286,8 +323,7 @@ static ParserState set_label_arg(TextInstruction* text_instruction,LabelTable* l
             Label* new_list = (Label*)realloc(label_table->label_list, label_table->capacity * sizeof(Label));
             
             if(new_list == NULL){
-                fprintf(stderr, "Error while reallocating text label buffer");
-                abort();
+                THROW(LABEL_TABLE_REALLOC_FAILUR, "Error while reallocating text label buffer");
             }
             label_table->label_list = new_list;
         }
@@ -331,13 +367,16 @@ static bool finish_parsing(char* line_buf, TextInstruction* text_instruction, in
         }
 
         else{
-            fprintf(stderr, "Error: Instruction %s requires %u but %u was(were) given!", text_instruction->operation.operation_name, text_instruction->operation.num_of_args, arg_count);
-            abort();
+            fprintf(stderr, "Error: Instruction %s requires %u but %u was(were) given!",
+                    text_instruction->operation.operation_name, text_instruction->operation.num_of_args, arg_count);
+            THROW(WRONG_ARG_NUM, "\0");
         }
             
     }
     return true;
 }
+
+//-------------------------INSTRUCTINS_PARSING--------------------------
 
 static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstruction* text_instruction, int symb_count){
     uint32_t arg_count = 0;
@@ -357,13 +396,15 @@ static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstr
 
         // Parse flag
         if((is_flag_symbol(line_buf[symb_count])) && arg_count < text_instruction->operation.num_of_args){
-            parser_state = set_arg_flag(text_instruction, &line_buf[symb_count], &arg_count,  &symb_count, parser_state);
+            parser_state = set_arg_flag(text_instruction, &line_buf[symb_count], &arg_count,
+                                        &symb_count, parser_state);
             continue;
         }
 
         // Parse num args
         if(is_hex_digit(line_buf[symb_count]) && arg_count < text_instruction->operation.num_of_args){
-            parser_state = set_num_arg(text_instruction, &line_buf[symb_count], arg_count, &symb_count, parser_state);
+            parser_state = set_num_arg(text_instruction, &line_buf[symb_count], arg_count,
+                                       &symb_count, parser_state);
             arg_count ++;
             continue;
         }
@@ -372,7 +413,8 @@ static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstr
         if(line_buf[symb_count] == ':'){
             // Moove to firs latter symb, which must follow after. 
             symb_count ++;
-            parser_state = set_label_arg(text_instruction, label_table, line_buf, &symb_count, arg_count, parser_state);
+            parser_state = set_label_arg(text_instruction, label_table, line_buf, &symb_count,
+                                         arg_count, parser_state);
             arg_count ++;
             continue;
         }
@@ -381,17 +423,19 @@ static void parse_instruction(char* line_buf, LabelTable* label_table, TextInstr
         if (arg_count <= text_instruction->operation.num_of_args) {
             fprintf(stderr, "Unknown token %c while parsing line: %s", 
                     line_buf[symb_count], &line_buf[0]);
-            abort();
+            THROW(UNKNOWN_TOKEN, "\0");
         }
 
         // Fall on to many args
-        if(arg_count >= text_instruction->operation.num_of_args && !is_ignorable_symbol(line_buf[symb_count]) && !is_parse_stoping_symbol(line_buf[symb_count])){
+        if(arg_count >= text_instruction->operation.num_of_args && !is_ignorable_symbol(line_buf[symb_count])
+           && !is_parse_stoping_symbol(line_buf[symb_count])){
             fprintf(stderr, "To many args. For operation %s\n", text_instruction->operation.operation_name);
-            abort();
+            THROW(WRONG_ARG_NUM, "\0");
         }
     }
 }
-// ---------------------------------------------------------
+
+//-------------------------STATE_MACHINE--------------------------
 
 static void parse_line(char* line_buf, LabelTable* label_table, TextInstructionArray* text_instruction_array, uint32_t* address){
     TextInstruction* text_instruction = &text_instruction_array->text_instruction_list[text_instruction_array->count];
@@ -422,11 +466,9 @@ void free_text_instruction_list(TextInstructionArray* text_instruction_array){
         text_instruction_array->text_instruction_list = NULL;
         return;
     }
-    fprintf(stderr, "Text_instruction_array or instructions list is already NULL!");
-    abort();
+    THROW(NULL_PTR_TEXT_INSTRUCTION_ARRAY, "Text_instruction_array or instructions list is already NULL!");
 }
 
-//--------------------------------------------------
 static void parse_iteration(FILE *text_asm_file, LabelTable* label_table, TextInstructionArray* text_instruction_array){
     char *line_buf = NULL;
     size_t len = 0;
@@ -443,7 +485,8 @@ static void parse_iteration(FILE *text_asm_file, LabelTable* label_table, TextIn
         // Reallocate text_instructions buffer if needed
         if(text_instruction_array->count == text_instruction_array->capacity){
             text_instruction_array->capacity *= 1.5;
-            text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity, sizeof(TextInstruction));
+            text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity,
+                                                                                     sizeof(TextInstruction));
         }
 
         parse_line(line_buf, label_table, text_instruction_array, &address);
@@ -452,42 +495,36 @@ static void parse_iteration(FILE *text_asm_file, LabelTable* label_table, TextIn
     free(line_buf);
 }
 
-//___________________DEBUG_________________________
+//--------------------------------CRITICAL_ERROR--------------------------------
 
-void print_text_instruction(TextInstruction* text_instruction){
-    printf("%s", text_instruction->operation.operation_name);
-    for(uint32_t j = 0; j < text_instruction->operation.num_of_args; j ++){
-        printf(" %s %x", text_instruction->imm[j].imm_flag, text_instruction->imm[j].imm);
+void parser_critical_error(TextInstructionArray* text_instructions_array, 
+                           LabelTable* label_table) {
+
+    if (text_instructions_array && text_instructions_array->text_instruction_list) {
+        free(text_instructions_array->text_instruction_list);
     }
-    printf("\n");
+    
+    if (label_table) {
+        free_label_table(label_table);
+    }
+    
+    abort();
 }
 
-void print_parsed_asm(TextInstructionArray* text_instruction_array){
-    for(uint32_t i = 0; i < text_instruction_array->count; i++){
-        print_text_instruction(&text_instruction_array->text_instruction_list[i]);
-    }
-}
 
-void print_label_table(LabelTable* label_table){
-    printf("Label List:\n");
-    for (uint32_t i = 0; i < label_table->count; i ++){
-        printf("%u   %s\n", label_table->label_list[i].address, label_table->label_list[i].label);
-    }
-}
-
-//___________________DEBUG_________________________
+//--------------------------------PARSER--------------------------------
 
 void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instruction_array, LabelTable* label_table){
     FILE *file = fopen(file_name, "r");
     if (!file) {
-        perror("Failed to open file");
-        abort();
+        THROW(FILE_OPENING_FAILURE, "Failed to open file");
     }
 
     // Initialization struct for text asm representation storage
     text_instruction_array->count = 0;
     text_instruction_array->capacity = INIT_TEXT_INSTR_ARR_SIZE;
-    text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity, sizeof(TextInstruction));
+    text_instruction_array->text_instruction_list = (TextInstruction*)calloc(text_instruction_array->capacity,
+                                                                             sizeof(TextInstruction));
 
 
     label_table->count = 0;
@@ -496,22 +533,27 @@ void parse_text_asm_file(const char* file_name, TextInstructionArray* text_instr
     
 
     // First iteration
-    printf("First pass:\n");
     parse_iteration(file, label_table, text_instruction_array);
 
-    print_parsed_asm(text_instruction_array);
+    if(DEBUG){
+        printf("\nFirst pass:\n");
+        print_parsed_asm(text_instruction_array);
+    }
 
     rewind(file);
 
     // Second iteration
-    printf("\nSecond pass:\n");
     parse_iteration(file, label_table, text_instruction_array);
 
-    // Testttttttttttttttttttttt
-    print_parsed_asm(text_instruction_array);
-    printf("Num of parsed lines: %u\n", text_instruction_array->count);
+    if(DEBUG){
+        printf("\nSecond pass:\n");
+        print_parsed_asm(text_instruction_array);
+    }
 
-    print_label_table(label_table);
+    if(DEBUG){
+        printf("\nNum of parsed lines: %u\n", text_instruction_array->count);
+        print_label_table(label_table);
+    }
     
     fclose(file);
 }

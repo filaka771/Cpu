@@ -1,4 +1,5 @@
 #include "instructions/instructions.h"
+#include "exceptions/exceptions.h"
 #include "text_asm_parser/text_asm_parser.h"
 #include "stack/stack.h"
 #include <stdio.h>
@@ -8,7 +9,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count) {
+//-----------------------DEBUG-----------------------
+static void print_bin_instruction(BinInstruction* bin_instruction){
+    printf("%b %b %b %b\n", bin_instruction->operation, bin_instruction->arg_list[0],
+           bin_instruction->arg_list[1], bin_instruction->arg_list[2]);
+}
+
+//--------------------ASSEMBLER----------------------
+static void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count) {
     int byte_position = 16 - (arg_count * 8);
 
     for (int flag_idx = 0; flag_idx < INSTRUCTIONS_FLAGS_NUMBER && text_flag[flag_idx] != '\0'; flag_idx++) {
@@ -25,14 +33,17 @@ void assemble_flag(uint32_t* bin_operation, const char* text_flag, int arg_count
     }
 }
 
-void assemble_text_instruction(BinInstruction* bin_instruction, TextInstruction* text_instruction){
+static void assemble_text_instruction(BinInstruction* bin_instruction, TextInstruction* text_instruction){
     bin_instruction->operation = 0;
     
     bin_instruction->operation |= (text_instruction->operation.op_code << 24);
     
+    if(DEBUG){
     printf("op code: %d  arg list: %s  bin rep: %b\n", text_instruction->operation.op_code,
            instruction_set[text_instruction->operation.op_code].op_name,
            (bin_instruction->operation >> 24) & 0xFF);
+    }
+
     for(uint32_t arg_count = 0; arg_count < text_instruction->operation.num_of_args; arg_count++){
         bin_instruction->arg_list[arg_count] = text_instruction->imm[arg_count].imm;
         
@@ -42,23 +53,21 @@ void assemble_text_instruction(BinInstruction* bin_instruction, TextInstruction*
     }
 }
 
-//--------------------DEBUG----------------------
-void print_bin_instruction(BinInstruction* bin_instruction){
-    printf("%b %b %b %b\n", bin_instruction->operation, bin_instruction->arg_list[0], bin_instruction->arg_list[1], bin_instruction->arg_list[2]);
-}
-//--------------------DEBUG----------------------
-void assemble_text_instructions_array(BinInstructionArray* bin_instructions_array, TextInstructionArray* text_instructions_array){
+static void assemble_text_instructions_array(BinInstructionArray* bin_instructions_array,
+                                             TextInstructionArray* text_instructions_array){
     for(uint32_t instructions_count = 0; instructions_count < text_instructions_array->count; instructions_count ++){
-        assemble_text_instruction(&bin_instructions_array->bin_instruction_list[instructions_count], &text_instructions_array->text_instruction_list[instructions_count]);
-        print_bin_instruction(&bin_instructions_array->bin_instruction_list[instructions_count]);
+        assemble_text_instruction(&bin_instructions_array->bin_instruction_list[instructions_count],
+                                  &text_instructions_array->text_instruction_list[instructions_count]);
+        if(DEBUG)
+            print_bin_instruction(&bin_instructions_array->bin_instruction_list[instructions_count]);
     }
 }
 
 
-void write_bin_file(BinInstructionArray* bin_instructions_array, const char* output_bin_file){
+static void write_bin_file(BinInstructionArray* bin_instructions_array, const char* output_bin_file){
     int fd = open(output_bin_file, O_RDWR | O_CREAT | O_TRUNC, 0644);  
     if(fd == -1){
-        fprintf(stderr, "Error opening output file");
+        fprintf(stderr, "Error opening output file!");
         abort();
     }
 
@@ -66,14 +75,15 @@ void write_bin_file(BinInstructionArray* bin_instructions_array, const char* out
 
     if(ftruncate(fd, bin_file_size) == -1){
         close(fd);
-        fprintf(stderr, "Error truncating file");
+        fprintf(stderr, "Error truncating file!");
         abort();
     }
 
-    BinInstruction* mapped_mem = (BinInstruction*)mmap(NULL, bin_file_size, PROT_WRITE, MAP_SHARED, fd, 0);
+    BinInstruction* mapped_mem = (BinInstruction*)mmap(NULL, bin_file_size, PROT_WRITE,
+                                                       MAP_SHARED, fd, 0);
     if(mapped_mem == MAP_FAILED){
         close(fd);
-        fprintf(stderr, "Cannot map memory for bin file");
+        fprintf(stderr, "Cannot map memory for bin file!");
         abort();
     }
 
@@ -88,14 +98,12 @@ void write_bin_file(BinInstructionArray* bin_instructions_array, const char* out
 
 
 int main(int argc, char* argv[]){
-    if(argc == 1){
-        fprintf(stderr, "Man!!!!!!!!!!!!!!");
-        abort();
-    }
-
     const char* text_asm_file = NULL;
     const char* output_bin_file = NULL;
-    
+
+    if(argc == 2){
+        text_asm_file = argv[1];
+    }
 
     if(argc == 3){
         text_asm_file = argv[1];
@@ -104,7 +112,7 @@ int main(int argc, char* argv[]){
 
     else{
 
-        fprintf(stderr,"To many args");
+        fprintf(stderr,"Wrong num of args!");
         abort();
     }
 
@@ -119,13 +127,20 @@ int main(int argc, char* argv[]){
     // TODO: In text_instructions_array reallocation handle case, when capacity * 1.5 > UINT_MAX
 
     // Parse assembler file into text instruction representation
-    parse_text_asm_file(text_asm_file, text_instructions_array, label_table);
+    TRY{
+        parse_text_asm_file(text_asm_file, text_instructions_array, label_table);
+    }
+    CATCH_ALL{
+        parser_critical_error(text_instructions_array, label_table);
+    }
+    END_TRY;
 
     BinInstructionArray bin_inst_arr;
     BinInstructionArray* bin_instructions_array = & bin_inst_arr;
 
     bin_instructions_array->count = text_instructions_array->count;
-    bin_instructions_array->bin_instruction_list = (BinInstruction*)calloc( text_instructions_array->count, sizeof(BinInstruction));
+    bin_instructions_array->bin_instruction_list = (BinInstruction*)calloc( text_instructions_array->count,
+                                                                           sizeof(BinInstruction));
 
     assemble_text_instructions_array(bin_instructions_array, text_instructions_array);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 enum error{
+    // ------Stack_errors-----
     // stack_init errors
     ERR_INVALID_PARAM,
     ERR_STACK_ALLOC,
@@ -16,5 +17,21 @@ enum error{
     ERR_POP_EMPTY_STACK,
 
     //stack_get_element errors
-    ERR_ELEM_INDEX_OUT_OF_RANGE
+    ERR_ELEM_INDEX_OUT_OF_RANGE,
+
+    // ------Parser_errors-----
+    ZERO_LENGTH_LABEL,
+    LABEL_TABLE_REALLOC_FAILUR,
+    LABEL_REDEFINITION,
+    WRONG_LABEL_NAME, 
+
+    WRONG_INSTRUCTION_NAME,
+    SPACES_IN_FLAG,
+    UNKNOWN_FLAG, 
+    TO_LARGE_IMM,
+    WRONG_ARG_NUM,
+    UNKNOWN_TOKEN,
+    NULL_PTR_TEXT_INSTRUCTION_ARRAY,
+
+    FILE_OPENING_FAILURE
 };
