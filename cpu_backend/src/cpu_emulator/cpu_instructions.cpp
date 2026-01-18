@@ -280,6 +280,9 @@ void div(Cpu* cpu){
     uint32_t src1_value = get_runtime_operand_value(cpu, &cpu_instruction_args.cpu_imm_args[1]);
     uint32_t src2_value = get_runtime_operand_value(cpu, &cpu_instruction_args.cpu_imm_args[2]);
 
+    if(src2_value == 0)
+        cpu_critical_error(cpu, "Division by zero!\n")
+
     uint32_t result = src1_value / src2_value;
 
     set_runtime_operand_value(cpu, &cpu_instruction_args.cpu_imm_args[0], result);
@@ -421,11 +424,8 @@ void ldr(Cpu* cpu) {
     CpuInstructionArgs cpu_instruction_args;
     parse_instruction_operands(cpu, &cpu_instruction_args, 1);
     
-    if (cpu->data_stack->count < 4) {
-        fprintf(stderr, "Stack underflow in ldr\n");
-        cpu_deinitialize(cpu);
-        abort();
-    }
+    if (cpu->data_stack->count < 4) 
+        cpu_critical_error(cpu, "Stack underflow in ldr\n");
     
     // Read from position count-4 (last 4 bytes)
     uint32_t position = cpu->data_stack->count - 4;
